@@ -1077,7 +1077,7 @@ function openLider(id, scope){
     del.disabled=true;
     try { await S.db.collection("lideres").doc(l.id).delete(); close(); toast("Líder quitado"); } catch(e){ fail(e); del.disabled=false; }
   };
-  setTimeout(()=>document.getElementById("l-nombre").focus(), 50);
+  setTimeout(()=>document.getElementById("l-nombre")?.focus(), 50);
   document.getElementById("lform").addEventListener("submit", async e=>{
     e.preventDefault();
     const nombre = document.getElementById("l-nombre").value.trim().replace(/\s+/g," ");
@@ -1322,7 +1322,7 @@ function openPerson(id){
     del.disabled = true;
     try { await S.db.collection("personas").doc(p.id).delete(); close(); toast("Persona eliminada"); } catch(e){ fail(e); del.disabled=false; }
   };
-  setTimeout(()=>document.getElementById("p-nombre").focus(), 50);
+  setTimeout(()=>document.getElementById("p-nombre")?.focus(), 50);
   document.getElementById("pform").addEventListener("submit", async e=>{
     e.preventDefault();
     const nombre = document.getElementById("p-nombre").value.trim().replace(/\s+/g," ");
