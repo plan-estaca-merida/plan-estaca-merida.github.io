@@ -35,7 +35,7 @@
 })();
 </script>
 </head><body>
-<title>Énfasis 2026 Estaca</title>
+<title>Plan Estaca Mérida</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Tinos&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
@@ -241,6 +241,19 @@ td.pend{color:var(--prep);font-size:.8rem;font-weight:700}
 :root.mode-phone .seg.three{grid-template-columns:repeat(3,1fr)}
 :root.mode-phone .seg.three button{font-size:.82rem;padding:10px 2px}
 .banner.demo{background:var(--accent-soft);color:var(--ink)}
+/* Encabezado ordenado en pantallas angostas */
+.brand h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:760px){
+  .top .wrap{row-gap:8px;column-gap:10px}
+  .brand-row{flex:1 1 0;min-width:0}
+  .brand-row svg{height:32px}
+  .brand h1{font-size:1.08rem}
+  .conn.ok{display:none}
+  .modebtn{font-size:.72rem;padding:4px 9px}
+  :root.mode-pc nav.tabs{order:5;flex:1 1 100%;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px}
+  :root.mode-pc nav.tabs button{padding:7px 10px;font-size:.92rem;gap:6px}
+  :root.mode-pc nav.tabs svg{width:18px;height:18px}
+}
 /* Pantalla inicial */
 .chooser{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:auto;
   padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -407,8 +420,8 @@ footer.note{color:var(--muted);font-size:.8rem;max-width:72ch}
 <header class="top">
   <div class="wrap">
     <div class="brand-row"><span id="minilogo"></span><div class="brand">
-      <h1>Énfasis 2026 · Estaca</h1>
-      <small>Estaca de Sión Mérida · Ministrar uno a uno</small>
+      <h1>Plan Estaca Mérida</h1>
+      <small>Énfasis 2026 · Ministrar uno a uno</small>
     </div></div>
     <nav class="tabs" id="tabs" aria-label="Secciones">
       <button data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h6M8 11h6"/></svg>Plan</button>
