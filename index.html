@@ -11,27 +11,56 @@
 <link rel="apple-touch-icon" href="og-square.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script>
-/* Los datos se guardan en este teléfono o computadora */
+/* ---------- Datos ----------
+   API = enlace de la hoja de Google (Apps Script). Si está vacío, cada quien guarda solo en su teléfono. */
+var API = "";
 (function(){
-  var KEY="enf-datos-v1", SEED={"personas":{},"semanas":{},"lideres":{}}, data;
-  function load(){ try{ var t=localStorage.getItem(KEY); if(t) return JSON.parse(t); }catch(e){} return JSON.parse(JSON.stringify(SEED)); }
+  var REMOTE = !!API;
+  var KEY = REMOTE ? "enf-cache-v1" : "enf-datos-v1", EMPTY = {"personas":{},"semanas":{},"lideres":{}}, data;
+  function load(){ try{ var t=localStorage.getItem(KEY); if(t){ var o=JSON.parse(t); if(o&&o.personas) return o; } }catch(e){} return JSON.parse(JSON.stringify(EMPTY)); }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
   data = load();
-  var subs = {};
+  var subs = {}, pending = 0, lastErr = false, seq = 0;
   function snap(col){ var c=data[col]||{}; return { docs: Object.keys(c).sort().map(function(id){ var o=c[id]; return {id:id, exists:true, data:function(){ return o; }, metadata:{fromCache:false,hasPendingWrites:false}}; }), size:Object.keys(c).length, empty:!Object.keys(c).length }; }
   function emit(col){ (subs[col]||[]).forEach(function(fn){ setTimeout(function(){ fn(snap(col)); },0); }); }
+  function emitAll(){ Object.keys(EMPTY).forEach(emit); }
   function merge(a,b){ var o=Object.assign({},a); Object.keys(b).forEach(function(k){ var v=b[k]; if(v&&typeof v==="object"&&!Array.isArray(v)&&o[k]&&typeof o[k]==="object"&&!Array.isArray(o[k])) o[k]=merge(o[k],v); else o[k]=v; }); return o; }
   function rid(){ return "d"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+  function conn(t, ok){ var el=document.getElementById("conn"); if(!el) return; el.textContent=t; el.className="conn "+(ok?"ok":"ro"); }
+  /* --- con la hoja de Google --- */
+  function refresh(){
+    if (!REMOTE || pending) return Promise.resolve();
+    var s0 = seq;
+    return fetch(API+"?a=all&_="+Date.now(), {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
+      if (!j || !j.ok) throw new Error(j && j.error);
+      if (pending || seq !== s0) return;
+      var nuevo = JSON.stringify(j.data), viejo = JSON.stringify(data);
+      lastErr = false; conn("En línea", true);
+      if (nuevo !== viejo){ data = j.data; Object.keys(EMPTY).forEach(function(k){ data[k]=data[k]||{}; }); save(); emitAll(); }
+    }).catch(function(){ lastErr = true; conn("Sin conexión", false); });
+  }
+  function send(body){
+    pending++; seq++;
+    return fetch(API, {method:"POST", body:JSON.stringify(body)}).then(function(r){ return r.json(); })
+      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : "server"}; lastErr=false; conn("En línea", true); emit(body.col); return j; })
+      .catch(function(e){ if (!(e && e.code)) pending--; conn("Sin conexión", false); refresh(); throw (e && e.code) ? e : {code:"network"}; });
+  }
   function docRef(col,id){ return { id:id,
-    set:function(b){ data[col]=data[col]||{}; data[col][id]=JSON.parse(JSON.stringify(b)); save(); emit(col); return Promise.resolve(); },
-    update:function(b){ data[col]=data[col]||{}; if(!data[col][id]) return Promise.reject({code:"invalid_argument"}); data[col][id]=merge(data[col][id], JSON.parse(JSON.stringify(b))); save(); emit(col); return Promise.resolve(); },
-    delete:function(){ if(data[col]) delete data[col][id]; save(); emit(col); return Promise.resolve(); } }; }
+    set:function(b){ var v=JSON.parse(JSON.stringify(b)); data[col]=data[col]||{}; data[col][id]=v; save(); emit(col); return REMOTE ? send({op:"set", col:col, id:id, data:v}).then(function(){}) : Promise.resolve(); },
+    update:function(b){ var v=JSON.parse(JSON.stringify(b)); data[col]=data[col]||{}; if(!data[col][id]) return Promise.reject({code:"not_found"}); data[col][id]=merge(data[col][id], v); save(); emit(col); return REMOTE ? send({op:"update", col:col, id:id, data:v}).then(function(){}) : Promise.resolve(); },
+    delete:function(){ if(data[col]) delete data[col][id]; save(); emit(col); return REMOTE ? send({op:"delete", col:col, id:id}).then(function(){}) : Promise.resolve(); } }; }
   var db = { collection:function(col){ return { doc:function(id){ return docRef(col, id||rid()); },
       onSnapshot:function(fn){ (subs[col]=subs[col]||[]).push(fn); setTimeout(function(){ fn(snap(col)); },0); return function(){ subs[col]=subs[col].filter(function(f){return f!==fn;}); }; } }; } };
   var user = { can:function(){ return Promise.resolve(true); }, isOwner:function(){ return Promise.resolve(true); }, canEdit:function(){ return Promise.resolve(true); } };
   var downloads = { save:function(o){ try{ var blob=new Blob([o.data],{type:"text/csv;charset=utf-8"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=o.filename; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500); return Promise.resolve({status:"saved"}); }catch(e){ return Promise.reject({code:"unavailable"}); } } };
   window.claude = { use:function(n){ return Promise.resolve(n==="db"?db:n==="user"?user:n==="downloads"?downloads:null); } };
-  window.__demoReset = function(){ try{ localStorage.removeItem(KEY); }catch(e){} location.reload(); };
+  window.__remote = REMOTE;
+  if (REMOTE){
+    refresh();
+    setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 20000);
+    document.addEventListener("visibilitychange", function(){ if (document.visibilityState==="visible") refresh(); });
+    window.addEventListener("online", refresh);
+  }
 })();
 </script>
 </head><body>
@@ -520,7 +549,7 @@ function render(){
   else $app.innerHTML = viewPlan();
 }
 
-function statusBanner(){ return `<div class="banner demo">Lo que anotes se guarda en este teléfono o computadora.</div>` + statusBanner0(); }
+function statusBanner(){ return (window.__remote ? "" : `<div class="banner demo">Lo que anotes se guarda en este teléfono o computadora.</div>`) + statusBanner0(); }
 function statusBanner0(){
   if (S.dbState==="none") return `<div class="banner warn">Para ver y llenar los datos, abre este enlace con la sesión de Claude iniciada. Si ya la iniciaste, pide al secretario de estaca que te dé acceso.</div>`;
   if (S.dbState==="error") return `<div class="banner err">No se pudo conectar con los datos. Cierra y vuelve a abrir la página.</div>`;
@@ -753,7 +782,7 @@ function viewBarrio(){
   const head = `<div class="bhead">
       <div><span class="eyebrow">Barrio</span><h2>${esc(BNAME[S.barrio])}</h2></div>
       ${pc||PILOTO?"":`<button class="btn ghost" data-act="chgbarrio">Cambiar barrio</button>`}
-      <div class="mini"><span><b class="num">${R.personas}</b> personas</span><span><b class="num">${R.ord}</b> ordenanzas</span><span><b class="num">${R.ent}</b> entrevistas</span><span><b class="num">${R.pad}</b> padres apoyados</span></div>
+      <div class="mini"><span><b class="num">${R.personas}</b> ${R.personas===1?"persona":"personas"}</span><span><b class="num">${R.ord}</b> ordenanzas</span><span><b class="num">${R.ent}</b> entrevistas</span><span><b class="num">${R.pad}</b> padres apoyados</span></div>
     </div>`;
   let main;
   if (!r){
