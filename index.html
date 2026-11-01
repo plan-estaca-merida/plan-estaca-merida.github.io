@@ -11,9 +11,9 @@
 <link rel="apple-touch-icon" href="og-square.png">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script>
-/* Versión web de prueba: los datos se guardan solo en este teléfono o computadora */
+/* Los datos se guardan en este teléfono o computadora */
 (function(){
-  var KEY="enf-demo-v1", SEED={"personas": {"ej44": {"barrio": "chama", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej04": {"barrio": "la-vuelta", "nombre": "Ana Martínez (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej18": {"barrio": "el-castor", "nombre": "María López (ejemplo)", "org": "Sociedad de Socorro", "ord": "Sellamiento", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej07": {"barrio": "las-americas", "nombre": "Daniel Rojas (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej26": {"barrio": "lagunillas", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej02": {"barrio": "la-vuelta", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej08": {"barrio": "las-americas", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej40": {"barrio": "chama", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej39": {"barrio": "chama", "nombre": "Daniel Rojas (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej20": {"barrio": "ejido", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej25": {"barrio": "lagunillas", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej21": {"barrio": "ejido", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej19": {"barrio": "el-castor", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej22": {"barrio": "ejido", "nombre": "Pedro Díaz (ejemplo)", "org": "Cuórum de Élderes", "ord": "Sacerdocio de Melquisedec", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej37": {"barrio": "vigia", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "Completada", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej13": {"barrio": "el-castor", "nombre": "Pedro Díaz (ejemplo)", "org": "Cuórum de Élderes", "ord": "Sacerdocio de Melquisedec", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej33": {"barrio": "santa-barbara", "nombre": "Ana Martínez (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej24": {"barrio": "ejido", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej27": {"barrio": "lagunillas", "nombre": "María López (ejemplo)", "org": "Sociedad de Socorro", "ord": "Sellamiento", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej41": {"barrio": "chama", "nombre": "Pedro Díaz (ejemplo)", "org": "Cuórum de Élderes", "ord": "Sacerdocio de Melquisedec", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej16": {"barrio": "el-castor", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "Completada", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej32": {"barrio": "santa-barbara", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej09": {"barrio": "las-americas", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej03": {"barrio": "la-vuelta", "nombre": "Pedro Díaz (ejemplo)", "org": "Cuórum de Élderes", "ord": "Sacerdocio de Melquisedec", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej14": {"barrio": "el-castor", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej06": {"barrio": "las-americas", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej31": {"barrio": "santa-barbara", "nombre": "Pedro Díaz (ejemplo)", "org": "Cuórum de Élderes", "ord": "Sacerdocio de Melquisedec", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej28": {"barrio": "lagunillas", "nombre": "Ana Martínez (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej38": {"barrio": "vigia", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej43": {"barrio": "chama", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej42": {"barrio": "chama", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej05": {"barrio": "la-vuelta", "nombre": "María López (ejemplo)", "org": "Sociedad de Socorro", "ord": "Sellamiento", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej12": {"barrio": "las-americas", "nombre": "María López (ejemplo)", "org": "Sociedad de Socorro", "ord": "Sellamiento", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej15": {"barrio": "el-castor", "nombre": "Daniel Rojas (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej35": {"barrio": "vigia", "nombre": "Daniel Rojas (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej23": {"barrio": "ejido", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej17": {"barrio": "el-castor", "nombre": "José Pérez (ejemplo)", "org": "Cuórum de Élderes", "ord": "Investidura", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej45": {"barrio": "chama", "nombre": "María López (ejemplo)", "org": "Sociedad de Socorro", "ord": "Sellamiento", "estado": "Completada", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej36": {"barrio": "vigia", "nombre": "Ana Martínez (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej10": {"barrio": "las-americas", "nombre": "Ana Martínez (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej34": {"barrio": "vigia", "nombre": "Luis Gómez (ejemplo)", "org": "Sacerdocio Aarónico (Hombres Jóvenes)", "ord": "Sacerdocio Aarónico", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej01": {"barrio": "la-vuelta", "nombre": "Carmen Ruiz (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bendición patriarcal", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej11": {"barrio": "las-americas", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej30": {"barrio": "santa-barbara", "nombre": "Sofía Torres (ejemplo)", "org": "Mujeres Jóvenes", "ord": "Bautismos por los muertos", "estado": "Listo", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}, "ej29": {"barrio": "santa-barbara", "nombre": "Daniel Rojas (ejemplo)", "org": "Primaria", "ord": "Bautismo y confirmación", "estado": "En preparación", "ejemplo": true, "creado": "2026-10-18T00:00:00Z"}}, "semanas": {"las-americas_2026-01-11": {"barrio": "las-americas", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 1, "bp": 0, "inv": 0, "sel": 0, "bpm": 1, "ent": 6, "pad": 2}, "santa-barbara_2026-01-11": {"barrio": "santa-barbara", "fecha": "2026-01-11", "ejemplo": true, "bc": 2, "sa": 2, "bp": 2, "inv": 1, "sel": 0, "bpm": 3, "ent": 8, "pad": 1}, "lagunillas_2026-01-11": {"barrio": "lagunillas", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 2, "bp": 1, "inv": 1, "sel": 0, "bpm": 1, "ent": 8, "pad": 3}, "ejido_2026-01-18": {"barrio": "ejido", "fecha": "2026-01-18", "ejemplo": true, "bc": 1, "sa": 2, "bp": 2, "inv": 1, "sel": 1, "bpm": 6, "ent": 5, "pad": 0}, "ejido_2026-01-04": {"barrio": "ejido", "fecha": "2026-01-04", "ejemplo": true, "bc": 0, "sa": 0, "bp": 1, "inv": 0, "sel": 1, "bpm": 4, "ent": 2, "pad": 1}, "ejido_2026-01-25": {"barrio": "ejido", "fecha": "2026-01-25", "ejemplo": true, "bc": 1, "sa": 2, "bp": 1, "inv": 0, "sel": 0, "bpm": 1, "ent": 3, "pad": 3}, "vigia_2026-01-04": {"barrio": "vigia", "fecha": "2026-01-04", "ejemplo": true, "bc": 2, "sa": 1, "bp": 2, "inv": 0, "sel": 0, "bpm": 6, "ent": 8, "pad": 1}, "el-castor_2026-01-18": {"barrio": "el-castor", "fecha": "2026-01-18", "ejemplo": true, "bc": 0, "sa": 2, "bp": 0, "inv": 1, "sel": 1, "bpm": 7, "ent": 2, "pad": 1}, "santa-barbara_2026-01-18": {"barrio": "santa-barbara", "fecha": "2026-01-18", "ejemplo": true, "bc": 1, "sa": 2, "bp": 0, "inv": 0, "sel": 1, "bpm": 5, "ent": 7, "pad": 0}, "las-americas_2026-01-04": {"barrio": "las-americas", "fecha": "2026-01-04", "ejemplo": true, "bc": 0, "sa": 1, "bp": 2, "inv": 1, "sel": 1, "bpm": 7, "ent": 6, "pad": 3}, "las-americas_2026-01-25": {"barrio": "las-americas", "fecha": "2026-01-25", "ejemplo": true, "bc": 1, "sa": 0, "bp": 1, "inv": 0, "sel": 1, "bpm": 6, "ent": 2, "pad": 0}, "lagunillas_2026-01-18": {"barrio": "lagunillas", "fecha": "2026-01-18", "ejemplo": true, "bc": 1, "sa": 1, "bp": 1, "inv": 1, "sel": 0, "bpm": 2, "ent": 2, "pad": 2}, "lagunillas_2026-01-04": {"barrio": "lagunillas", "fecha": "2026-01-04", "ejemplo": true, "bc": 2, "sa": 0, "bp": 0, "inv": 0, "sel": 1, "bpm": 2, "ent": 7, "pad": 2}, "la-vuelta_2026-01-04": {"barrio": "la-vuelta", "fecha": "2026-01-04", "ejemplo": true, "bc": 1, "sa": 1, "bp": 0, "inv": 0, "sel": 0, "bpm": 8, "ent": 5, "pad": 0}, "vigia_2026-01-18": {"barrio": "vigia", "fecha": "2026-01-18", "ejemplo": true, "bc": 2, "sa": 0, "bp": 2, "inv": 0, "sel": 0, "bpm": 2, "ent": 2, "pad": 1}, "las-americas_2026-01-18": {"barrio": "las-americas", "fecha": "2026-01-18", "ejemplo": true, "bc": 2, "sa": 1, "bp": 1, "inv": 1, "sel": 1, "bpm": 1, "ent": 2, "pad": 4}, "santa-barbara_2026-01-04": {"barrio": "santa-barbara", "fecha": "2026-01-04", "ejemplo": true, "bc": 0, "sa": 2, "bp": 1, "inv": 1, "sel": 0, "bpm": 5, "ent": 8, "pad": 1}, "el-castor_2026-01-25": {"barrio": "el-castor", "fecha": "2026-01-25", "ejemplo": true, "bc": 1, "sa": 1, "bp": 2, "inv": 1, "sel": 0, "bpm": 6, "ent": 8, "pad": 4}, "vigia_2026-01-11": {"barrio": "vigia", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 0, "bp": 1, "inv": 1, "sel": 0, "bpm": 6, "ent": 5, "pad": 3}, "chama_2026-01-04": {"barrio": "chama", "fecha": "2026-01-04", "ejemplo": true, "bc": 0, "sa": 0, "bp": 1, "inv": 0, "sel": 1, "bpm": 8, "ent": 3, "pad": 4}, "santa-barbara_2026-01-25": {"barrio": "santa-barbara", "fecha": "2026-01-25", "ejemplo": true, "bc": 0, "sa": 1, "bp": 1, "inv": 1, "sel": 0, "bpm": 5, "ent": 5, "pad": 2}, "chama_2026-01-11": {"barrio": "chama", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 1, "bp": 2, "inv": 1, "sel": 0, "bpm": 0, "ent": 7, "pad": 2}, "la-vuelta_2026-01-11": {"barrio": "la-vuelta", "fecha": "2026-01-11", "ejemplo": true, "bc": 2, "sa": 0, "bp": 0, "inv": 0, "sel": 1, "bpm": 0, "ent": 3, "pad": 0}, "el-castor_2026-01-04": {"barrio": "el-castor", "fecha": "2026-01-04", "ejemplo": true, "bc": 2, "sa": 2, "bp": 1, "inv": 1, "sel": 1, "bpm": 5, "ent": 2, "pad": 3}, "ejido_2026-01-11": {"barrio": "ejido", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 2, "bp": 1, "inv": 1, "sel": 0, "bpm": 8, "ent": 6, "pad": 0}, "el-castor_2026-01-11": {"barrio": "el-castor", "fecha": "2026-01-11", "ejemplo": true, "bc": 1, "sa": 0, "bp": 2, "inv": 0, "sel": 1, "bpm": 0, "ent": 3, "pad": 2}}, "lideres": {}}, data;
+  var KEY="enf-datos-v1", SEED={"personas":{},"semanas":{},"lideres":{}}, data;
   function load(){ try{ var t=localStorage.getItem(KEY); if(t) return JSON.parse(t); }catch(e){} return JSON.parse(JSON.stringify(SEED)); }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
   data = load();
@@ -224,7 +224,7 @@ td.pend{color:var(--prep);font-size:.8rem;font-weight:700}
 .links{display:flex;flex-direction:column;gap:8px}
 .lk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lk code{display:block;font-size:.72rem;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
-.pend{display:flex;flex-direction:column;margin:6px 0 12px}
+div.pend{display:flex;flex-direction:column;margin:6px 0 12px}
 .pend-row{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:12px;align-items:start;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 2px;text-align:left;font-size:.9rem}
 .pend-row:hover{background:var(--surface-2)}
 .pdate{font-weight:700;font-size:.82rem;color:var(--muted)} .pdate.late{color:var(--danger)}
@@ -427,6 +427,7 @@ footer.note{color:var(--muted);font-size:.8rem;max-width:72ch}
       <button data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h6M8 11h6"/></svg>Plan</button>
       <button data-tab="estaca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Estaca</button>
       <button data-tab="barrio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>Mi barrio</button>
+      <button data-tab="misional"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Plan misional</button>
     </nav>
     <span class="conn" id="conn">Conectando…</span>
     <button class="modebtn" id="modebtn" type="button">Cambiar vista</button>
@@ -438,9 +439,12 @@ footer.note{color:var(--muted);font-size:.8rem;max-width:72ch}
 
 <script>
 (() => {
-const BARRIOS = [
+// MODO PRUEBA: solo se muestra este barrio. Para volver a ver toda la estaca, cambia "el-castor" por null.
+const PILOTO = "el-castor";
+const BARRIOS_TODOS = [
   ["la-vuelta","La Vuelta"],["las-americas","Las Américas"],["el-castor","El Castor"],["ejido","Ejido"],
   ["lagunillas","Lagunillas"],["santa-barbara","Santa Bárbara"],["vigia","Vigía"],["chama","Chama"]];
+const BARRIOS = PILOTO ? BARRIOS_TODOS.filter(b=>b[0]===PILOTO) : BARRIOS_TODOS;
 const BNAME = Object.fromEntries(BARRIOS);
 const ORGS = ["Primaria","Mujeres Jóvenes","Sacerdocio Aarónico (Hombres Jóvenes)","Sociedad de Socorro","Cuórum de Élderes"];
 const ORDS = ["Bautismo y confirmación","Santa Cena","Sacerdocio Aarónico","Bautismos por los muertos","Bendición patriarcal","Sacerdocio de Melquisedec","Investidura","Sellamiento"];
@@ -509,12 +513,14 @@ function setTab(t, push=true){
 document.getElementById("tabs").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) setTab(b.dataset.tab); });
 
 function render(){
+  if (PILOTO && S.tab==="estaca") S.tab="barrio";
   if (S.tab==="estaca") $app.innerHTML = viewEstaca();
   else if (S.tab==="barrio") $app.innerHTML = viewBarrio();
+  else if (S.tab==="misional") $app.innerHTML = viewMisional();
   else $app.innerHTML = viewPlan();
 }
 
-function statusBanner(){ return `<div class="banner demo"><b>Versión de prueba.</b> Puedes tocar y probar todo: lo que cambies se guarda solo en este teléfono o computadora. <button class="edit" onclick="window.__demoReset()">Volver a los ejemplos</button></div>` + statusBanner0(); }
+function statusBanner(){ return `<div class="banner demo">Lo que anotes se guarda en este teléfono o computadora.</div>` + statusBanner0(); }
 function statusBanner0(){
   if (S.dbState==="none") return `<div class="banner warn">Para ver y llenar los datos, abre este enlace con la sesión de Claude iniciada. Si ya la iniciaste, pide al secretario de estaca que te dé acceso.</div>`;
   if (S.dbState==="error") return `<div class="banner err">No se pudo conectar con los datos. Cierra y vuelve a abrir la página.</div>`;
@@ -746,12 +752,12 @@ function viewBarrio(){
   const r = roleObj();
   const head = `<div class="bhead">
       <div><span class="eyebrow">Barrio</span><h2>${esc(BNAME[S.barrio])}</h2></div>
-      ${pc?"":`<button class="btn ghost" data-act="chgbarrio">Cambiar barrio</button>`}
+      ${pc||PILOTO?"":`<button class="btn ghost" data-act="chgbarrio">Cambiar barrio</button>`}
       <div class="mini"><span><b class="num">${R.personas}</b> personas</span><span><b class="num">${R.ord}</b> ordenanzas</span><span><b class="num">${R.ent}</b> entrevistas</span><span><b class="num">${R.pad}</b> padres apoyados</span></div>
     </div>`;
   let main;
   if (!r){
-    main = `${head}<div class="card"><span class="eyebrow">Paso 2 de 2</span><h2 style="font-size:1.3rem;margin-top:4px">¿Quién eres en el consejo de barrio?</h2>
+    main = `${head}<div class="card"><span class="eyebrow">${PILOTO?"Primer paso":"Paso 2 de 2"}</span><h2 style="font-size:1.3rem;margin-top:4px">¿Quién eres en el consejo de barrio?</h2>
       <p class="sub">Elige tu llamamiento. Abajo te sale solo lo que te toca llenar.</p>
       <div class="roles">${ROLES.map(x=>`<button class="role ${x.id==="todos"?"all":""}" data-rol="${x.id}"><b>${esc(x.name)}</b><span class="who">${x.id==="todos"?esc(x.who):(()=>{ const ls=lideresDe(S.barrio,x.id); return ls.length?esc(ls.map(lidTxt).join(" · ")):esc(x.who)+' · <i>sin nombre anotado</i>'; })()}</span><span class="fills">${esc(roleFills(x))}</span></button>`).join("")}</div></div>
     ${viewConsejo()}`;
@@ -768,7 +774,7 @@ function viewBarrio(){
     ${S.sub==="personas" ? viewPersonas() : S.sub==="consejo" ? viewConsejo()+enlacesCard(S.barrio) : S.sub==="stats" ? viewStatsBarrio() : (r.id==="todos" ? viewSemanaTodos() : viewSemana())}`;
   }
   return `<section class="view">${statusBanner()}
-    <div class="blayout">${pc?`<aside>${barrioPicker()}</aside>`:""}<div class="bmain">${main}</div></div></section>`;
+    ${PILOTO?`<div class="bmain">${main}</div>`:`<div class="blayout">${pc?`<aside>${barrioPicker()}</aside>`:""}<div class="bmain">${main}</div></div>`}</section>`;
 }
 
 function viewPersonas(){
@@ -792,7 +798,7 @@ function viewPersonas(){
     ${!S.loadedP && S.dbState==="ok" ? `<div class="empty">Cargando personas…</div>` :
       list.length ? `<div class="plist">${list.map(p=>personCard(p,ro)).join("")}</div>` :
       `<div class="empty"><b>${all.length?"Nadie con este estado":"Aún no hay personas anotadas"}</b>${all.length?"Prueba con otro filtro.":"Toca “Agregar persona” y escribe el nombre y su siguiente ordenanza."}</div>`}
-    <p class="banner">Cuando una persona avance, solo toca su nuevo estado. Se guarda al instante y la estaca lo ve enseguida.</p>`;
+    <p class="banner">Cuando una persona avance, solo toca su nuevo estado. Se guarda al instante y ${PILOTO?"el consejo":"la estaca"} lo ve enseguida.</p>`;
 }
 function personCard(p,ro){
   return `<article class="person">
@@ -887,23 +893,41 @@ function viewPlan(){
       <div><b>2. Padres apoyados</b><p>En el reporte semanal cada líder anota cuántos padres apoyó. La estaca ve el total por barrio.</p></div>
       <div><b>3. Entrevistas y ordenanzas</b><p>El obispado y las presidencias anotan las entrevistas significativas; el obispado anota las ordenanzas efectuadas. La estaca ve los totales sin sumar a mano.</p></div>
     </div></div>
-    <div class="card"><h3>Qué llena cada líder</h3><p class="sub">Al entrar a Mi barrio, cada líder elige su llamamiento y ve solo su parte.</p>
+    <div class="card"><h3>Qué llena cada líder</h3><p class="sub">Al entrar a ${PILOTO?esc(BNAME[PILOTO]):"Mi barrio"}, cada líder elige su llamamiento y ve solo su parte.</p>
       <div class="tscroll"><table><thead><tr><th>Llamamiento</th><th style="text-align:left">Personas por nombre</th><th style="text-align:left">Reporte semanal</th></tr></thead>
       <tbody>${ROLES.filter(x=>x.id!=="todos").map(x=>`<tr><td><b>${esc(x.name)}</b></td><td style="text-align:left;white-space:normal">${esc(x.org==="Sacerdocio Aarónico (Hombres Jóvenes)"?"Hombres Jóvenes":x.org)}</td><td style="text-align:left;white-space:normal">${x.fields.length===WF.length?"Ordenanzas efectuadas, entrevistas y padres apoyados":esc(fieldLabels(x.fields).join(" y ").replace(/^./,c=>c.toUpperCase()))}</td></tr>`).join("")}
       <tr><td><b>Todos</b></td><td style="text-align:left;white-space:normal">Todas las organizaciones</td><td style="text-align:left;white-space:normal">Ve lo de todos y quién falta por anotar</td></tr></tbody></table></div></div>
     <div class="card"><h3>Cómo usar esta página</h3>
       <ol class="steps-list">
-        <li>Entra a <b>Mi barrio</b>, elige tu barrio y luego tu llamamiento. La página lo recuerda.</li>
+        <li>${PILOTO?`Entra a <b>${esc(BNAME[PILOTO])}</b> y elige tu llamamiento`:`Entra a <b>Mi barrio</b>, elige tu barrio y luego tu llamamiento`}. La página lo recuerda.</li>
         <li>En <b>Personas por nombre</b>, toca “Agregar persona”. Cuando avance, toca su nuevo estado.</li>
         <li>Cada domingo, en <b>Reporte semanal</b>, escribe tus números de esa semana (0 si no hubo) y toca “Guardar semana”.</li>
         <li>Toca el nombre de una persona y luego una ordenanza para escribir su <b>plan de acción</b>: qué harán, quién y para cuándo.</li>
-        <li>En la pestaña <b>Estaca</b>, los líderes de estaca eligen su llamamiento en “Ver como” y ven todos los barrios, sus estadísticas y los planes de acción.</li>
+        ${PILOTO?"":`<li>En la pestaña <b>Estaca</b>, los líderes de estaca eligen su llamamiento en “Ver como” y ven todos los barrios, sus estadísticas y los planes de acción.</li>`}
       </ol></div>
     ${owner ? `<div class="card"><h3>Herramientas del secretario</h3><p class="sub">Solo tú ves esta sección.</p>
       <div class="row" style="justify-content:flex-start">
         <button class="btn ghost" data-act="csv">Descargar respaldo (CSV)</button>
         ${nEj ? `<button class="btn danger" data-act="clearex">Borrar los ${nEj} registros de ejemplo</button>`:""}
-      </div><p class="ref" style="margin-top:10px">Enlace directo por barrio: agrega al final del enlace <b>#</b> y el barrio, por ejemplo <b>#ejido</b> o <b>#santa-barbara</b>. Así cada líder abre directo en el suyo.</p></div>`:""}
+      </div>${PILOTO?"":`<p class="ref" style="margin-top:10px">Enlace directo por barrio: agrega al final del enlace <b>#</b> y el barrio, por ejemplo <b>#ejido</b> o <b>#santa-barbara</b>. Así cada líder abre directo en el suyo.</p>`}</div>`:""}
+  </section>`;
+}
+/* ---------- plan misional del barrio ----------
+   Para llenar el contenido: escribe aquí las secciones de cada barrio.
+   Cada sección: {titulo:"...", texto:"...", puntos:["...","..."]} */
+const PLAN_MISIONAL = {
+  "el-castor": []
+};
+function viewMisional(){
+  const slug = PILOTO || S.barrio;
+  if (!slug) return `<section class="view">
+    <div class="hero"><span class="eyebrow">Plan misional del barrio</span><h2>Primero elige tu barrio</h2><p>Entra a Mi barrio y elige tu barrio para ver su plan misional.</p></div></section>`;
+  const secs = PLAN_MISIONAL[slug] || [];
+  return `<section class="view plan">
+    <div class="hero"><span class="eyebrow">Barrio ${esc(BNAME[slug])}</span><h2>Plan misional del barrio</h2>
+      <p>Lo que el consejo de barrio se propone para compartir el Evangelio, recibir a los nuevos y fortalecer a cada persona.</p></div>
+    ${secs.length ? secs.map((x,i)=>`<div class="card"><h3>${i+1}. ${esc(x.titulo)}</h3>${x.texto?`<p>${esc(x.texto)}</p>`:""}${x.puntos&&x.puntos.length?`<ul class="steps-list">${x.puntos.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}</div>`).join("")
+      : `<div class="card"><div class="empty"><b>Contenido en preparación</b>Pronto aparecerá aquí el plan misional del Barrio ${esc(BNAME[slug])}.</div></div>`}
   </section>`;
 }
 /* ---------- estadísticas del barrio ---------- */
@@ -1360,7 +1384,7 @@ $app.addEventListener("click", async e=>{
     S.barrio=t.dataset.barrio; store.set("enf-barrio",S.barrio); S.filtro="Todos"; S.draft=null; setTab("barrio"); return; }
   if (t.dataset.rol){ S.rol=t.dataset.rol; store.set("enf-rol",S.rol); S.filtro="Todos"; S.sub="stats"; S.draft=null; S.dirty=false; render(); window.scrollTo({top:0}); return; }
   if (t.dataset.act==="chgrol"){ S.rol=null; S.draft=null; S.dirty=false; render(); return; }
-  if (t.dataset.act==="chgbarrio"){ S.barrio=null; S.draft=null; S.dirty=false; render(); window.scrollTo({top:0}); return; }
+  if (t.dataset.act==="chgbarrio"){ S.barrio=PILOTO||null; S.draft=null; S.dirty=false; render(); window.scrollTo({top:0}); return; }
   if (t.dataset.sub){ S.sub=t.dataset.sub; render(); return; }
   if (t.dataset.filtro){ S.filtro=t.dataset.filtro; render(); return; }
   if (t.dataset.act==="add"){ openPerson(null); return; }
@@ -1435,13 +1459,18 @@ async function exportCSV(){
 }
 
 /* ---------- arranque ---------- */
+if (PILOTO){
+  const tb=document.querySelector('#tabs button[data-tab="estaca"]'); if(tb) tb.hidden=true;
+  const mb=document.querySelector('#tabs button[data-tab="barrio"]'); if(mb) mb.lastChild.textContent=BNAME[PILOTO];
+  const sm=document.querySelector('.brand small'); if(sm) sm.textContent="Prueba · Barrio "+BNAME[PILOTO];
+}
 function fromHash(){
   const h = (location.hash||"").slice(1);
   const [a, b] = h.split(".");
   if (BNAME[a]){ S.barrio=a; store.set("enf-barrio",a); S.tab="barrio";
     if (b && ROLES.some(r=>r.id===b)){ S.rol=b; store.set("enf-rol",b); S.sub="stats"; } }
-  else if (a==="estaca"){ S.tab="estaca"; if (b && EROLES.some(r=>r.id===b)){ S.erol=b; store.set("enf-erol",b); S.esub="stats"; } }
-  else if (["barrio","plan"].includes(a)) S.tab=a;
+  else if (!PILOTO && a==="estaca"){ S.tab="estaca"; if (b && EROLES.some(r=>r.id===b)){ S.erol=b; store.set("enf-erol",b); S.esub="stats"; } }
+  else if (["barrio","plan","misional"].includes(a)) S.tab=a;
 }
 /* ---------- vista: computadora o teléfono ---------- */
 function applyMode(m){
@@ -1522,7 +1551,7 @@ function showCover(){
 }
 showCover();
 
-S.barrio = BNAME[store.get("enf-barrio")] ? store.get("enf-barrio") : null;
+S.barrio = PILOTO || (BNAME[store.get("enf-barrio")] ? store.get("enf-barrio") : null);
 S.rol = ROLES.some(r=>r.id===store.get("enf-rol")) ? store.get("enf-rol") : null;
 S.erol = EROLES.some(r=>r.id===store.get("enf-erol")) ? store.get("enf-erol") : "todos";
 fromHash();

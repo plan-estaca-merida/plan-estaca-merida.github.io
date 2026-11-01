@@ -3,6 +3,6 @@
 Página de seguimiento del Énfasis del Área del Caribe 2026 ("Ministrar uno a uno a través de ordenanzas y convenios") para los barrios de la Estaca de Sión Mérida.
 
 - Sitio: https://plan-estaca-merida.github.io/
-- Versión de prueba: los datos se guardan solo en el navegador de cada persona.
+- Por ahora solo muestra el Barrio El Castor (modo prueba). Los datos se guardan en el navegador de cada persona.
 
 Herramienta local de apoyo. No es un documento oficial de La Iglesia de Jesucristo de los Santos de los Últimos Días.
