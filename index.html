@@ -29,25 +29,40 @@ var API = "";
   function emitAll(){ Object.keys(EMPTY).forEach(emit); }
   function merge(a,b){ var o=Object.assign({},a); Object.keys(b).forEach(function(k){ var v=b[k]; if(v&&typeof v==="object"&&!Array.isArray(v)&&o[k]&&typeof o[k]==="object"&&!Array.isArray(o[k])) o[k]=merge(o[k],v); else o[k]=v; }); return o; }
   function rid(){ return "d"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-  function conn(t, ok){ var el=document.getElementById("conn"); if(!el) return; el.textContent=t; el.className="conn "+(ok?"ok":"ro");
-    if (ok){ var d=new Date(); el.title="Actualizado a las "+d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+". Toca para actualizar."; } else el.title="Sin conexión. Toca para reintentar."; }
+  var lastConn = null;
+  function conn(t, ok){ lastConn=[t,ok]; var el=document.getElementById("conn"); if(!el) return; el.textContent=t; el.className="conn "+(ok?"ok":"ro");
+    if (ok && t==="En vivo"){ var d=new Date(); el.title="Actualizado a las "+d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+". Toca para actualizar."; } else if (!ok) el.title="Sin conexión. Toca para reintentar."; }
   /* --- con la hoja de Google --- */
-  function refresh(){
-    if (!REMOTE || pending) return Promise.resolve();
-    var s0 = seq;
+  /* Para no cargar la hoja en cada consulta: primero se pregunta solo la "versión" (cambia con cada guardado).
+     Si cambió, o pasó más de un minuto, se bajan todos los datos. */
+  var ver = null, lastFull = 0, busyGet = false;
+  function full(s0){
     return fetch(API+"?a=all&_="+Date.now(), {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
       if (!j || !j.ok) throw new Error(j && j.error);
-      if (pending || seq !== s0) return;
+      lastFull = Date.now();
+      if (pending || seq !== s0) return;            // alguien de este equipo guardó mientras tanto: se pide de nuevo luego
+      if (j.v != null) ver = j.v;
       var nuevo = JSON.stringify(j.data), viejo = JSON.stringify(data);
       lastErr = false; conn("En vivo", true);
       if (nuevo !== viejo){ data = j.data; Object.keys(EMPTY).forEach(function(k){ data[k]=data[k]||{}; }); save(); emitAll(); }
-    }).catch(function(){ lastErr = true; conn("Sin conexión", false); });
+    });
+  }
+  function refresh(force){
+    if (!REMOTE || pending || busyGet) return Promise.resolve();
+    var s0 = seq; busyGet = true;
+    var p = (force || ver === null || Date.now()-lastFull > 60000) ? full(s0)
+      : fetch(API+"?a=v&_="+Date.now(), {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
+          if (!j || !j.ok) throw new Error(j && j.error);
+          lastErr = false; conn("En vivo", true);
+          if (j.v !== ver) return full(s0);
+        });
+    return p.catch(function(){ lastErr = true; conn("Sin conexión", false); }).then(function(){ busyGet = false; });
   }
   function send(body){
-    pending++; seq++;
+    pending++; seq++; conn("Guardando…", true);
     return fetch(API, {method:"POST", body:JSON.stringify(body)}).then(function(r){ return r.json(); })
-      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : "server"}; lastErr=false; conn("En vivo", true); emit(body.col); setTimeout(refresh, 1500); return j; })
-      .catch(function(e){ if (!(e && e.code)) pending--; conn("Sin conexión", false); refresh(); throw (e && e.code) ? e : {code:"network"}; });
+      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : j && j.error==="lock" ? "busy" : "server"}; lastErr=false; conn(pending?"Guardando…":"En vivo", true); emit(body.col); setTimeout(function(){ refresh(true); }, 800); return j; })
+      .catch(function(e){ if (!(e && e.code)) pending--; conn("Sin conexión", false); setTimeout(function(){ refresh(true); }, 800); throw (e && e.code) ? e : {code:"network"}; });
   }
   function docRef(col,id){ return { id:id,
     set:function(b){ var v=JSON.parse(JSON.stringify(b)); data[col]=data[col]||{}; data[col][id]=v; save(); emit(col); return REMOTE ? send({op:"set", col:col, id:id, data:v}).then(function(){}) : Promise.resolve(); },
@@ -60,9 +75,12 @@ var API = "";
   window.claude = { use:function(n){ return Promise.resolve(n==="db"?db:n==="user"?user:n==="downloads"?downloads:null); } };
   window.__remote = REMOTE;
   if (REMOTE){
-    refresh();
-    setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 10000);
-    document.addEventListener("click", function(e){ if (e.target && e.target.id==="conn") refresh(); });
+    refresh(true);
+    document.addEventListener("DOMContentLoaded", function(){ if (lastConn) conn(lastConn[0], lastConn[1]); });
+    setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 8000);
+    document.addEventListener("click", function(e){ if (e.target && e.target.closest && e.target.closest("#conn")) refresh(true); });
+    // Si alguien cierra la página mientras se guarda algo, el teléfono le avisa.
+    window.addEventListener("beforeunload", function(e){ if (pending){ e.preventDefault(); e.returnValue = ""; } });
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", function(){ if (document.visibilityState==="visible") refresh(); });
     window.addEventListener("online", refresh);
@@ -73,7 +91,7 @@ var API = "";
 <title>Plan Estaca Mérida</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Tinos&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Tinos&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
 <style>
 /* Layout: app de una columna; resumen arriba, detalle abajo. Pestañas abajo en el celular, arriba en computadora. */
 :root{
@@ -85,7 +103,7 @@ var API = "";
   --danger:#b3261e; --danger-soft:#fbe3e1;
   --heat:2,79,121;
   --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-body:"Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --r:12px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -134,7 +152,8 @@ nav.tabs svg{width:20px;height:20px;flex:none}
 /* Vista teléfono: pestañas abajo, columna angosta */
 :root.mode-phone nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);justify-content:space-around;
     padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
-:root.mode-phone nav.tabs button{flex-direction:column;gap:2px;font-size:.75rem;padding:6px 10px;border-radius:10px;flex:1;justify-content:center}
+:root.mode-phone nav.tabs button{flex-direction:column;gap:3px;font-size:.8rem;padding:7px 8px;border-radius:12px;flex:1;justify-content:center;min-height:54px}
+:root.mode-phone nav.tabs svg{width:24px;height:24px}
 :root.mode-phone main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 :root.mode-phone .wrap{max-width:560px}
 :root.mode-phone .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -425,6 +444,14 @@ td.heat{text-align:center;font-weight:700;min-width:2.6rem}
 .weekbar .lab span{font-size:.8rem;color:var(--muted)}
 .icon{border:1px solid var(--line);background:var(--surface);width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:1.2rem;flex:none}
 .icon:disabled{opacity:.4}
+/* íconos dibujados */
+.ic{width:1em;height:1em;flex:none;display:block}
+.icon .ic{width:22px;height:22px}
+.path .mk .ic{width:16px;height:16px;stroke-width:3}
+.ck .mk .ic{width:15px;height:15px;stroke-width:3}
+.pdot{width:10px;height:10px;border-radius:50%;background:currentColor;display:block}
+.path .chev{display:inline-flex;vertical-align:middle;margin-left:2px}
+.path .chev .ic{width:16px;height:16px}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.fields{grid-template-columns:minmax(0,1fr)}}
 .field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
@@ -471,10 +498,10 @@ footer.note{color:var(--muted);font-size:.8rem;max-width:72ch}
       <small>Énfasis 2026 · Ministrar uno a uno</small>
     </div></div>
     <nav class="tabs" id="tabs" aria-label="Secciones">
-      <button data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h6M8 11h6"/></svg>Plan</button>
-      <button data-tab="estaca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Estaca</button>
-      <button data-tab="barrio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>Mi barrio</button>
-      <button data-tab="misional"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Plan misional</button>
+      <button data-tab="plan"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h6M8 11h6"/></svg>Plan</button>
+      <button data-tab="estaca"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Estaca</button>
+      <button data-tab="barrio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></svg>Mi barrio</button>
+      <button data-tab="misional"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M19 8v6M16 11h6"/></svg>Plan misional</button>
     </nav>
     <button class="conn" id="conn" type="button" title="Toca para actualizar">Conectando…</button>
     <button class="modebtn" id="modebtn" type="button">Cambiar vista</button>
@@ -517,6 +544,11 @@ const ROLES = [
   {id:"pri", name:"Primaria", who:"Presidenta", org:"Primaria", fields:["pad"]},
   {id:"todos", name:"Todos", who:"Vista completa del consejo de barrio", org:null, fields:[]}];
 
+// Íconos dibujados (se ven igual en todos los teléfonos, sin depender de emojis ni de la letra)
+const svgI = d => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const IC = { check: svgI('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), x: svgI('<path d="M6 6l12 12M18 6 6 18"/>'),
+  left: svgI('<path d="M15 5l-7 7 7 7"/>'), right: svgI('<path d="M9 5l7 7-7 7"/>'),
+  down: svgI('<path d="M6 9l6 6 6-6"/>'), up: svgI('<path d="M6 15l6-6 6 6"/>'), dot: '<span class="pdot"></span>' };
 const busy = new Set();
 const S = { personas:[], semanas:[], lideres:[], loadedP:false, loadedW:false, loadedL:false, db:null, canWrite:null, owner:false, dbState:"wait",
   tab:"plan", rol:null, barrio:null, sub:"stats", erol:"todos", esub:"stats", pfiltro:"todas", pbarrio:"", fopen:null, filtro:"Todos", week:null, draft:null, dirty:false };
@@ -569,7 +601,7 @@ function render(){
 
 function statusBanner(){ return (window.__remote ? "" : `<div class="banner demo">Lo que anotes se guarda en este teléfono o computadora.</div>`) + statusBanner0(); }
 function statusBanner0(){
-  if (S.dbState==="none") return `<div class="banner warn">Para ver y llenar los datos, abre este enlace con la sesión de Claude iniciada. Si ya la iniciaste, pide al secretario de estaca que te dé acceso.</div>`;
+  if (S.dbState==="none") return `<div class="banner warn">No se pudo conectar con los datos del barrio. Revisa tu conexión a internet y vuelve a abrir la página.</div>`;
   if (S.dbState==="error") return `<div class="banner err">No se pudo conectar con los datos. Cierra y vuelve a abrir la página.</div>`;
   return "";
 }
@@ -650,7 +682,7 @@ function viewStatsOrg(er){
       <thead><tr><th>Barrio</th><th>Personas</th><th>En prep.</th><th>Listas</th><th>Compl.</th><th>Camino</th><th>Con plan</th><th>Entrevistas</th><th>Padres</th><th>Esta semana</th></tr></thead>
       <tbody>${rows.map(r=>`<tr class="clk" data-eplan="${r.slug}" tabindex="0"><td><span class="bname">${esc(r.name)}</span>${r.lid?`<span class="tdname">${esc(r.lid)}</span>`:`<span class="tdname" style="color:var(--prep)">sin líder anotado</span>`}</td><td class="num">${r.n}</td><td class="num">${r.prep}</td><td class="num">${r.listo}</td><td class="num">${r.comp}</td>
         <td class="num">${bar(r.av,"var(--comp)")}</td><td class="num">${r.act?`${r.planes} de ${r.act}`:"·"}</td><td class="num">${er.id==="pri"?"·":r.ent}</td><td class="num">${r.pad}</td>
-        <td class="num">${r.sem?`<span style="color:var(--comp);font-weight:700">✓ anotó</span>`:`<span style="color:var(--prep);font-weight:700">falta</span>`}</td></tr>`).join("")}</tbody>
+        <td class="num">${r.sem?`<span style="color:var(--comp);font-weight:700">Anotó</span>`:`<span style="color:var(--prep);font-weight:700">falta</span>`}</td></tr>`).join("")}</tbody>
       <tfoot><tr><td>Total estaca</td><td class="num">${ps.length}</td><td class="num">${prep}</td><td class="num">${listo}</td><td class="num">${comp}</td><td class="num">${av}%</td><td class="num">${conPlan} de ${activos}</td><td class="num">${er.id==="pri"?"·":ent}</td><td class="num">${pad}</td><td></td></tr></tfoot>
     </table></div>
   </div>
@@ -861,9 +893,9 @@ function personCard(p,ro){
 function weekDoc(slug,fecha,rol){ return S.semanas.find(w=>w.barrio===slug&&w.fecha===fecha&&(w.rol||"")===rol); }
 function weekBar(sub){
   return `<div class="weekbar">
-      <button class="icon" data-wk="-1" aria-label="Semana anterior" ${S.week<=FIRST?"disabled":""}>‹</button>
+      <button class="icon" data-wk="-1" aria-label="Semana anterior" ${S.week<=FIRST?"disabled":""}>${IC.left}</button>
       <div class="lab"><b>Domingo ${fmt(S.week)}</b><span>Semana ${weekNo(S.week)} de 52 · ${sub}</span></div>
-      <button class="icon" data-wk="1" aria-label="Semana siguiente" ${S.week>=LAST?"disabled":""}>›</button>
+      <button class="icon" data-wk="1" aria-label="Semana siguiente" ${S.week>=LAST?"disabled":""}>${IC.right}</button>
     </div>`;
 }
 function viewSemana(){
@@ -954,7 +986,7 @@ function viewPlan(){
         <li>Toca el nombre de una persona y luego una ordenanza para escribir su <b>plan de acción</b>: qué harán, quién y para cuándo.</li>
         ${PILOTO?"":`<li>En la pestaña <b>Estaca</b>, los líderes de estaca eligen su llamamiento en “Ver como” y ven todos los barrios, sus estadísticas y los planes de acción.</li>`}
       </ol></div>
-    ${owner ? `<div class="card"><h3>Herramientas del secretario</h3><p class="sub">Solo tú ves esta sección.</p>
+    ${owner ? `<div class="card"><h3>Respaldo de datos</h3><p class="sub">Descarga una copia de todo lo anotado. Se abre en Excel o en Hojas de cálculo de Google.</p>
       <div class="row" style="justify-content:flex-start">
         <button class="btn ghost" data-act="csv">Descargar respaldo (CSV)</button>
         ${nEj ? `<button class="btn danger" data-act="clearex">Borrar los ${nEj} registros de ejemplo</button>`:""}
@@ -1066,7 +1098,7 @@ function viewStatsBarrio(){
       <tbody>${rows.map(r=>`<tr><td><b>${esc(r.name)}</b>${r.lid?`<span class="tdname">${esc(r.lid)}</span>`:""}</td><td class="num">${r.n}</td><td class="num">${r.prep}</td><td class="num">${r.listo}</td><td class="num">${r.comp}</td>
         <td class="num">${r.av===null?"·":`<span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-block;width:48px;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${r.av}%;background:var(--comp)"></span></span>${r.av}%</span>`}</td>
         <td class="num">${r.ent}</td><td class="num">${r.pad}</td></tr>`).join("")}
-        ${genRow?`<tr><td><b>Registro general</b><span class="tdname">datos de ejemplo del Excel</span></td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">${genRow.ent}</td><td class="num">${genRow.pad}</td></tr>`:""}</tbody>
+        ${genRow?`<tr><td><b>Registro general</b></td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">·</td><td class="num">${genRow.ent}</td><td class="num">${genRow.pad}</td></tr>`:""}</tbody>
       <tfoot><tr><td>Total del barrio</td><td class="num">${R.personas}</td><td class="num">${R.prep}</td><td class="num">${R.listo}</td><td class="num">${R.comp}</td><td class="num">${avance}%</td><td class="num">${R.ent}</td><td class="num">${R.pad}</td></tr></tfoot>
     </table></div>
   </div>
@@ -1082,7 +1114,7 @@ function viewStatsBarrio(){
     <div class="card">
       <h2>Reporte de esta semana</h2>
       <p class="sub">Domingo ${fmt(now)}: quién del consejo ya anotó.</p>
-      <div class="checklist">${anot.map(a=>{ const ls=lideresDe(slug,a.x.id).filter(l=>!/secretari|consejer/i.test(l.llamamiento)); return `<div class="ck ${a.ok?"ok":""}"><span class="mk" aria-hidden="true">${a.ok?"✓":""}</span><div><b>${esc(a.x.name)}</b><span>${ls.length?esc(ls.map(l=>l.nombre).join(", "))+" · ":""}${a.ok?"Ya anotó":"Falta anotar"}</span></div></div>`; }).join("")}</div>
+      <div class="checklist">${anot.map(a=>{ const ls=lideresDe(slug,a.x.id).filter(l=>!/secretari|consejer/i.test(l.llamamiento)); return `<div class="ck ${a.ok?"ok":""}"><span class="mk" aria-hidden="true">${a.ok?IC.check:""}</span><div><b>${esc(a.x.name)}</b><span>${ls.length?esc(ls.map(l=>l.nombre).join(", "))+" · ":""}${a.ok?"Ya anotó":"Falta anotar"}</span></div></div>`; }).join("")}</div>
     </div>
   </div>`;
 }
@@ -1215,7 +1247,9 @@ const planChip = (p,o) => { const pl=planDe(p,o); if(!pl) return ""; const v=ven
   return `<em class="plchip ${v?"late":""}">${v?"Plan vencido":"Plan de acción"}${pl.fecha?" · "+esc(fmtFecha(pl.fecha)):""}</em>`; };
 
 function openFicha(id, openOrd){
-  const p = S.personas.find(x=>x.id===id); if(!p) return;
+  const p = S.personas.find(x=>x.id===id);
+  if(!p){ if (S.fid===id){ S.fid=null; S.fopen=null; $layer.innerHTML=""; render(); toast("Otro líder eliminó a esta persona."); } return; }
+  S.fid = id;
   const prevScroll = $layer.querySelector(".ficha")?.scrollTop || 0;
   if (openOrd !== undefined) S.fopen = openOrd;
   const ro = S.canWrite===false || S.dbState!=="ok";
@@ -1237,14 +1271,14 @@ function openFicha(id, openOrd){
     const cls = (done ? "done" : next ? "next "+(p.estado==="Listo"?"listo":"prep") : "pend") + (open?" open":"");
     const label = rec ? (done ? "Participa con regularidad" : next ? `Siguiente · ${estadoTxt}` : "Aún no participa") : (done ? "Recibida" : next ? `Siguiente · ${estadoTxt}` : "Le falta");
     const nota = ORD_NOTA[o] && !rec ? ` · ${ORD_NOTA[o]}` : "";
-    return `<li class="${cls}"><span class="mk" aria-hidden="true">${done?"✓":next?"●":""}</span>
-      <button class="tx" data-fx="${open?"":esc(o)}" aria-expanded="${open}"><b>${esc(o)} <span class="chev" aria-hidden="true">${open?"▴":"▾"}</span></b><span>${label}${nota}</span>${pl?planChip(p,o):(next?`<em class="plchip no">Sin plan de acción</em>`:"")}</button>
+    return `<li class="${cls}"><span class="mk" aria-hidden="true">${done?IC.check:next?IC.dot:""}</span>
+      <button class="tx" data-fx="${open?"":esc(o)}" aria-expanded="${open}"><b>${esc(o)} <span class="chev" aria-hidden="true">${open?IC.up:IC.down}</span></b><span>${label}${nota}</span>${pl?planChip(p,o):(next?`<em class="plchip no">Sin plan de acción</em>`:"")}</button>
       ${ro?"<span></span>":`<div class="ac">${done ? `<button class="mini-btn" data-fq="${esc(o)}">${rec?"Aún no":"Quitar"}</button>` : `<button class="mini-btn ok" data-fh="${esc(o)}">${rec?"Participa":"Recibida"}</button>${next?"":`<button class="mini-btn" data-fn="${esc(o)}">Siguiente</button>`}`}</div>`}
       ${open?`<div class="plwrap">${planBox(o)}</div>`:""}
     </li>`; };
   $layer.innerHTML = `<div class="overlay" id="ov"><div class="sheet ficha" role="dialog" aria-label="Camino de convenios de ${esc(p.nombre)}">
     <div class="row" style="align-items:flex-start"><div style="min-width:0"><span class="eyebrow">${esc(BNAME[p.barrio]||"")} · ${esc(p.org)}</span><h2 style="overflow-wrap:anywhere">${esc(p.nombre)}</h2></div>
-      <button class="icon" id="fclose" aria-label="Cerrar">✕</button></div>
+      <button class="icon" id="fclose" aria-label="Cerrar">${IC.x}</button></div>
     <div class="fprog"><div class="fbar"><div style="width:${pct}%"></div></div>
       <span><b class="num">${h.length}</b> de <b class="num">${cm.length}</b> ordenanzas recibidas · faltan <b class="num">${faltan.length}</b></span></div>
     <p class="banner" style="margin:0">Toca una ordenanza para ver o escribir su <b>plan de acción</b>.</p>
@@ -1257,13 +1291,15 @@ function openFicha(id, openOrd){
     <div class="row">${ro?"<span></span>":`<button class="btn ghost" id="fedit">Editar datos</button>`}<button class="btn" id="fok">Listo</button></div>
   </div></div>`;
   const sheet = $layer.querySelector(".ficha"); sheet.scrollTop = prevScroll;
-  const close = () => { S.fopen=null; $layer.innerHTML=""; render(); };
+  const close = () => { S.fopen=null; S.fid=null; $layer.innerHTML=""; render(); };
   document.getElementById("fclose").onclick = close;
   document.getElementById("fok").onclick = close;
   document.getElementById("ov").addEventListener("click", e=>{ if(e.target.id==="ov") close(); });
-  const fe = document.getElementById("fedit"); if (fe) fe.onclick = () => { S.fopen=null; openPerson(p.id); };
+  const fe = document.getElementById("fedit"); if (fe) fe.onclick = () => { S.fopen=null; S.fid=null; openPerson(p.id); };
   if (S.fopen && !ro){ const ta = document.getElementById("pl-txt-"+ORD_ID[S.fopen]); if (ta && !ta.value) setTimeout(()=>ta.focus(),30); }
+  const p0 = p;
   sheet.addEventListener("click", async e=>{
+    const p = S.personas.find(x=>x.id===id) || p0; // la copia más reciente (otro líder pudo cambiarla)
     const fx = e.target.closest("[data-fx]");
     if (fx){ openFicha(p.id, fx.dataset.fx || null); return; }
     const ps = e.target.closest("[data-plsave]");
@@ -1315,7 +1351,7 @@ function enlacesCard(scope){
 }
 function openShare(title, text, copied){
   $layer.innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-label="${esc(title)}">
-    <div class="row" style="align-items:flex-start"><h2>${esc(title)}</h2><button class="icon" id="sclose" aria-label="Cerrar">✕</button></div>
+    <div class="row" style="align-items:flex-start"><h2>${esc(title)}</h2><button class="icon" id="sclose" aria-label="Cerrar">${IC.x}</button></div>
     <p class="banner ${copied?"":"warn"}" style="margin:0">${copied?"Copiado. Pégalo en el grupo de WhatsApp del consejo.":"Mantén presionado el texto, elige Seleccionar todo y Copiar."}</p>
     <textarea class="sharetxt" id="sharetxt" readonly rows="14">${esc(text)}</textarea>
     <div class="row"><a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Abrir en WhatsApp</a><button class="btn" id="scopy">Copiar otra vez</button></div>
@@ -1419,9 +1455,13 @@ function openPerson(id){
     const body = { barrio:p?.barrio||S.barrio, nombre, org:$org.value, ord:$ord.value, estado:document.getElementById("p-estado").value,
       sexo:$sexo.value, ...(p && Array.isArray(p.hechas) ? {hechas:p.hechas} : {}), ...(p && p.planes ? {planes:p.planes} : {}), ejemplo: p ? !!p.ejemplo && p.nombre===nombre : false, creado: p?.creado || new Date().toISOString(), actualizado:new Date().toISOString() };
     const btn = document.getElementById("psave"); btn.disabled = true;
-    try { const ref = p ? S.db.collection("personas").doc(p.id) : S.db.collection("personas").doc();
-      await ref.set(body); close(); toast(p?"Cambios guardados":"Persona agregada"); }
-    catch(e2){ fail(e2); btn.disabled=false; }
+    try {
+      if (p){ // solo los datos de este formulario: así no se borra un plan o un avance que otro líder anotó al mismo tiempo
+        const up = {nombre:body.nombre, org:body.org, ord:body.ord, estado:body.estado, sexo:body.sexo, ejemplo:body.ejemplo, actualizado:body.actualizado};
+        await S.db.collection("personas").doc(p.id).update(up);
+      } else await S.db.collection("personas").doc().set(body);
+      close(); toast(p?"Cambios guardados":"Persona agregada"); }
+    catch(e2){ if (e2 && e2.code==="not_found"){ close(); toast("Otro líder eliminó a esta persona hace un momento."); return; } fail(e2); btn.disabled=false; }
   });
 }
 
@@ -1489,6 +1529,8 @@ function fail(e){
   const c = e && e.code;
   if (c==="invalid_argument"){ S.canWrite=false; render(); toast("No tienes permiso para anotar. Pide acceso de editor al secretario."); }
   else if (c==="quota_exceeded") toast("Se llenó el espacio de datos. Avisa al secretario"+(PILOTO?" del barrio.":" de estaca."));
+  else if (c==="busy") toast("Varios líderes están guardando a la vez. Espera unos segundos e inténtalo otra vez.");
+  else if (c==="not_found") toast("Este registro ya no existe: otro líder lo eliminó.");
   else toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
 }
 
@@ -1609,7 +1651,7 @@ window.addEventListener("hashchange", ()=>{ fromHash(); setTab(S.tab,false); });
 
 function setConn(){
   if (S.dbState==="ok" && !window.__remote) { $conn.textContent = "Solo este equipo"; $conn.className = "conn ro"; }
-  else if (S.dbState==="ok") { $conn.textContent = S.canWrite===false ? "Solo lectura" : "En vivo"; $conn.className = "conn " + (S.canWrite===false?"ro":"ok"); }
+  else if (S.dbState==="ok") { /* con la hoja de Google, el estado (En vivo / Guardando… / Sin conexión) lo pone la conexión misma */ }
   else if (S.dbState==="none"){ $conn.textContent="Sin conexión a datos"; $conn.className="conn ro"; }
   else if (S.dbState==="error"){ $conn.textContent="Error"; $conn.className="conn ro"; }
 }
@@ -1627,7 +1669,9 @@ function setConn(){
   const onErr = e => { if (e?.code==="revoked"){ S.dbState="none"; } else { S.dbState="error"; } setConn(); render(); };
   db.collection("personas").onSnapshot(snap=>{
     S.personas = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(p=>BNAME[p.barrio]);
-    S.loadedP = true; if (!document.querySelector(".overlay")) render();
+    S.loadedP = true;
+    if (!document.querySelector(".overlay")) render();
+    else if (S.fid && !S.fopen && !busy.has(S.fid) && document.querySelector(".ficha")) openFicha(S.fid);
   }, onErr);
   db.collection("lideres").onSnapshot(snap=>{
     S.lideres = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(l=>BNAME[l.barrio]||l.barrio==="estaca");
