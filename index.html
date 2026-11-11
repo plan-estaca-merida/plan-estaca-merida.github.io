@@ -9,6 +9,9 @@
 <meta name="theme-color" content="#013b63">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="og-square.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="El Castor">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script>
 /* ---------- Datos ----------
@@ -26,7 +29,8 @@ var API = "";
   function emitAll(){ Object.keys(EMPTY).forEach(emit); }
   function merge(a,b){ var o=Object.assign({},a); Object.keys(b).forEach(function(k){ var v=b[k]; if(v&&typeof v==="object"&&!Array.isArray(v)&&o[k]&&typeof o[k]==="object"&&!Array.isArray(o[k])) o[k]=merge(o[k],v); else o[k]=v; }); return o; }
   function rid(){ return "d"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-  function conn(t, ok){ var el=document.getElementById("conn"); if(!el) return; el.textContent=t; el.className="conn "+(ok?"ok":"ro"); }
+  function conn(t, ok){ var el=document.getElementById("conn"); if(!el) return; el.textContent=t; el.className="conn "+(ok?"ok":"ro");
+    if (ok){ var d=new Date(); el.title="Actualizado a las "+d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+". Toca para actualizar."; } else el.title="Sin conexión. Toca para reintentar."; }
   /* --- con la hoja de Google --- */
   function refresh(){
     if (!REMOTE || pending) return Promise.resolve();
@@ -35,14 +39,14 @@ var API = "";
       if (!j || !j.ok) throw new Error(j && j.error);
       if (pending || seq !== s0) return;
       var nuevo = JSON.stringify(j.data), viejo = JSON.stringify(data);
-      lastErr = false; conn("En línea", true);
+      lastErr = false; conn("En vivo", true);
       if (nuevo !== viejo){ data = j.data; Object.keys(EMPTY).forEach(function(k){ data[k]=data[k]||{}; }); save(); emitAll(); }
     }).catch(function(){ lastErr = true; conn("Sin conexión", false); });
   }
   function send(body){
     pending++; seq++;
     return fetch(API, {method:"POST", body:JSON.stringify(body)}).then(function(r){ return r.json(); })
-      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : "server"}; lastErr=false; conn("En línea", true); emit(body.col); return j; })
+      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : "server"}; lastErr=false; conn("En vivo", true); emit(body.col); setTimeout(refresh, 1500); return j; })
       .catch(function(e){ if (!(e && e.code)) pending--; conn("Sin conexión", false); refresh(); throw (e && e.code) ? e : {code:"network"}; });
   }
   function docRef(col,id){ return { id:id,
@@ -57,7 +61,9 @@ var API = "";
   window.__remote = REMOTE;
   if (REMOTE){
     refresh();
-    setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 20000);
+    setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 10000);
+    document.addEventListener("click", function(e){ if (e.target && e.target.id==="conn") refresh(); });
+    window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", function(){ if (document.visibilityState==="visible") refresh(); });
     window.addEventListener("online", refresh);
   }
@@ -111,7 +117,12 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .brand{display:flex;flex-direction:column;min-width:0;flex:1}
 .brand h1{font-size:1.15rem;line-height:1.15}
 .brand small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.conn{font-size:.75rem;padding:4px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.conn{font-size:.75rem;font-weight:700;padding:5px 11px 5px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:0;cursor:pointer}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.conn.ok::before{animation:livepulse 2s ease-in-out infinite}
+@keyframes livepulse{0%,100%{box-shadow:0 0 0 0 rgba(31,122,61,.45)}50%{box-shadow:0 0 0 5px rgba(31,122,61,0)}}
+@media (prefers-reduced-motion:reduce){.conn.ok::before{animation:none}}
+.modebtn{display:none!important}
 .conn.ok{background:var(--comp-soft);color:var(--comp)}
 .conn.ro{background:var(--prep-soft);color:var(--prep)}
 nav.tabs{display:flex;gap:4px}
@@ -277,7 +288,6 @@ div.pend{display:flex;flex-direction:column;margin:6px 0 12px}
   .brand-row{flex:1 1 0;min-width:0}
   .brand-row svg{height:32px}
   .brand h1{font-size:1.08rem}
-  .conn.ok{display:none}
   .modebtn{font-size:.72rem;padding:4px 9px}
   :root.mode-pc nav.tabs{order:5;flex:1 1 100%;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px}
   :root.mode-pc nav.tabs button{padding:7px 10px;font-size:.92rem;gap:6px}
@@ -344,7 +354,15 @@ main .wrap{padding-block:20px 40px;display:flex;flex-direction:column;gap:20px}
 .months span{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
 
 /* tables */
-.tscroll{overflow-x:auto;margin:0 -18px;padding:0 18px}
+.tscroll{overflow-x:auto;margin:0 -18px;padding:0 18px;-webkit-overflow-scrolling:touch;position:relative}
+:root.mode-phone .tscroll table th:first-child,:root.mode-phone .tscroll table td:first-child{z-index:1;box-shadow:6px 0 6px -6px rgba(0,0,0,.16)}
+.resplist{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.resp{border-top:1px solid var(--line);padding-top:10px}
+.resp b{display:block;margin-bottom:6px}
+.rchips{display:flex;flex-wrap:wrap;gap:6px}
+.rchips span{background:var(--accent-soft);color:var(--accent);font-size:.8rem;font-weight:700;padding:4px 9px;border-radius:99px}
+.swipehint{display:none;font-size:.78rem;color:var(--muted);margin:2px 0 6px;align-items:center;gap:6px}
+:root.mode-phone .swipehint{display:flex}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;vertical-align:bottom}
@@ -458,7 +476,7 @@ footer.note{color:var(--muted);font-size:.8rem;max-width:72ch}
       <button data-tab="barrio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>Mi barrio</button>
       <button data-tab="misional"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Plan misional</button>
     </nav>
-    <span class="conn" id="conn">Conectando…</span>
+    <button class="conn" id="conn" type="button" title="Toca para actualizar">Conectando…</button>
     <button class="modebtn" id="modebtn" type="button">Cambiar vista</button>
   </div>
 </header>
@@ -628,7 +646,7 @@ function viewStatsOrg(er){
   </div>
   <div class="card">
     <h2>Por barrio</h2><p class="sub">${esc(er.name)} en cada barrio. Toca un barrio para ver sus personas y planes.</p>
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Barrio</th><th>Personas</th><th>En prep.</th><th>Listas</th><th>Compl.</th><th>Camino</th><th>Con plan</th><th>Entrevistas</th><th>Padres</th><th>Esta semana</th></tr></thead>
       <tbody>${rows.map(r=>`<tr class="clk" data-eplan="${r.slug}" tabindex="0"><td><span class="bname">${esc(r.name)}</span>${r.lid?`<span class="tdname">${esc(r.lid)}</span>`:`<span class="tdname" style="color:var(--prep)">sin líder anotado</span>`}</td><td class="num">${r.n}</td><td class="num">${r.prep}</td><td class="num">${r.listo}</td><td class="num">${r.comp}</td>
         <td class="num">${bar(r.av,"var(--comp)")}</td><td class="num">${r.act?`${r.planes} de ${r.act}`:"·"}</td><td class="num">${er.id==="pri"?"·":r.ent}</td><td class="num">${r.pad}</td>
@@ -638,7 +656,7 @@ function viewStatsOrg(er){
   </div>
   <div class="card">
     <h2>¿Para qué ordenanza se preparan?</h2><p class="sub">${esc(er.name)}: en preparación o listas, por barrio.</p>
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Siguiente ordenanza</th>${BARRIOS.map(([,n])=>`<th style="text-align:center">${esc(n)}</th>`).join("")}<th>Total</th></tr></thead>
       <tbody>${ordsOrg.map((o,i)=>`<tr><td>${esc(o)}</td>${M[i].map(v=>`<td class="heat num" ${heat(v)}>${v||"·"}</td>`).join("")}<td class="num"><b>${M[i].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}</tbody>
     </table></div>
@@ -736,7 +754,7 @@ function estacaAllStats(){
   <div class="card">
     <h2>Por barrio</h2>
     <p class="sub">Personas registradas y totales acumulados del año.</p>
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Barrio</th><th>Personas</th><th>En prep.</th><th>Listas</th><th>Compl.</th><th>Ordenanzas</th><th>Entrevistas</th><th>Padres</th></tr></thead>
       <tbody>${rows.map(r=>`<tr class="clk" data-go="${r.slug}" tabindex="0"><td><span class="bname">${esc(r.name)}</span></td><td class="num">${r.personas}</td><td class="num">${r.prep}</td><td class="num">${r.listo}</td><td class="num">${r.comp}</td>
         <td class="num"><span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-block;width:56px;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${(r.ord/maxB*100).toFixed(0)}%;background:var(--accent)"></span></span>${r.ord}</span></td>
@@ -748,7 +766,7 @@ function estacaAllStats(){
   <div class="card">
     <h2>¿Para qué ordenanza se preparan?</h2>
     <p class="sub">Personas en preparación o listas, por siguiente ordenanza y barrio.</p>
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Siguiente ordenanza</th>${BARRIOS.map(([,n])=>`<th style="text-align:center">${esc(n)}</th>`).join("")}<th>Total</th></tr></thead>
       <tbody>${ORDS.map((o,i)=>`<tr><td>${esc(o)}</td>${prepM[i].map(v=>`<td class="heat num" ${heat(v)}>${v||"·"}</td>`).join("")}<td class="num"><b>${prepM[i].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}</tbody>
     </table></div>
@@ -782,7 +800,7 @@ function viewBarrio(){
   const head = `<div class="bhead">
       <div><span class="eyebrow">Barrio</span><h2>${esc(BNAME[S.barrio])}</h2></div>
       ${pc||PILOTO?"":`<button class="btn ghost" data-act="chgbarrio">Cambiar barrio</button>`}
-      <div class="mini"><span><b class="num">${R.personas}</b> ${R.personas===1?"persona":"personas"}</span><span><b class="num">${R.ord}</b> ordenanzas</span><span><b class="num">${R.ent}</b> entrevistas</span><span><b class="num">${R.pad}</b> padres apoyados</span></div>
+      <div class="mini"><span><b class="num">${R.personas}</b> ${R.personas===1?"persona":"personas"}</span><span><b class="num">${R.ord}</b> ${R.ord===1?"ordenanza":"ordenanzas"}</span><span><b class="num">${R.ent}</b> ${R.ent===1?"entrevista":"entrevistas"}</span><span><b class="num">${R.pad}</b> ${R.pad===1?"padre apoyado":"padres apoyados"}</span></div>
     </div>`;
   let main;
   if (!r){
@@ -792,7 +810,7 @@ function viewBarrio(){
     ${viewConsejo()}`;
   } else {
     main = `${head}
-    ${S.canWrite===false ? `<div class="banner warn">Estás en modo de solo lectura. Para anotar, pide al secretario de estaca que te invite como editor.</div>`:""}
+    ${S.canWrite===false ? `<div class="banner warn">Estás en modo de solo lectura. Para anotar, pide al secretario ${PILOTO?"del barrio":"de estaca"} que te invite como editor.</div>`:""}
     <div class="rolebar"><div style="min-width:0"><span class="eyebrow">Estás como</span><b>${esc(r.name)}</b>${r.id!=="todos" && lideresDe(S.barrio,r.id).length ? `<span class="fills" style="color:var(--ink)">${esc(lideresDe(S.barrio,r.id).map(lidTxt).join(" · "))}</span>`:""}<span class="fills">${esc(roleFills(r))}</span></div><button class="btn ghost" data-act="chgrol">Cambiar</button></div>
     <div class="seg" role="group" aria-label="Sección">
       <button data-sub="stats" aria-pressed="${S.sub==="stats"}">Estadísticas</button>
@@ -880,7 +898,7 @@ function viewSemanaTodos(){
   const weeks = [...new Set(S.semanas.filter(w=>w.barrio===S.barrio).map(w=>w.fecha))].sort().reverse();
   return `<div class="card" style="display:flex;flex-direction:column;gap:14px">
     ${weekBar(`${docs.length} ${docs.length===1?"registro":"registros"} del consejo`)}
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Quién llena</th>${WF.map(f=>`<th style="white-space:normal;min-width:5.5rem">${esc(f[1])}</th>`).join("")}</tr></thead>
       <tbody>${rows.map(row=>`<tr><td><b>${esc(row.name)}</b>${row.rid&&lideresDe(S.barrio,row.rid).length?`<span class="tdname">${esc(lideresDe(S.barrio,row.rid).filter(l=>!/secretari|consejer/i.test(l.llamamiento)).map(l=>l.nombre).join(", ")||lideresDe(S.barrio,row.rid)[0].nombre)}</span>`:""}</td>${WF.map(([k])=>cell(row,k)).join("")}</tr>`).join("")}</tbody>
       <tfoot><tr><td>Total del barrio</td>${WF.map(([k])=>`<td class="num">${tot[k]}</td>`).join("")}</tr></tfoot>
@@ -911,19 +929,21 @@ function viewPlan(){
       <p>Las entrevistas ayudan a los miembros a prepararse para hacer y guardar convenios: el obispo entrevista a los miembros nuevos poco después de su confirmación, y los líderes del cuórum de élderes y de la Sociedad de Socorro tienen entrevistas de ministración por lo menos cada trimestre.</p>
       <p class="ref">Manual General 38.2.9.1, 26.4.2 y 21.3 · Reunión de líderes de la Conferencia General, octubre de 2024</p></div>
     <div class="card"><h3>Siguiente ordenanza por organización</h3><p class="sub">Tabla de responsabilidad del plan del Área.</p>
-      <div class="tscroll"><table><thead><tr><th>Organización</th>${ORDS.map(o=>`<th style="text-align:center;white-space:normal;min-width:4.6rem;padding-inline:4px">${esc(o)}</th>`).join("")}</tr></thead>
-      <tbody>${ORGS.map(g=>`<tr><td>${esc(g)}</td>${RESP[g].map(v=>`<td style="text-align:center">${v?'<span class="dot" aria-label="sí">●</span>':""}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      ${document.documentElement.classList.contains("mode-phone")
+        ? `<div class="resplist">${ORGS.map(g=>`<div class="resp"><b>${esc(g)}</b><div class="rchips">${ORDS.filter((o,i)=>RESP[g][i]).map(o=>`<span>${esc(o)}</span>`).join("")}</div></div>`).join("")}</div>`
+        : `<div class="tscroll"><table><thead><tr><th>Organización</th>${ORDS.map(o=>`<th style="text-align:center;white-space:normal;min-width:4.6rem;padding-inline:4px">${esc(o)}</th>`).join("")}</tr></thead>
+      <tbody>${ORGS.map(g=>`<tr><td>${esc(g)}</td>${RESP[g].map(v=>`<td style="text-align:center">${v?'<span class="dot" aria-label="sí">●</span>':""}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
       <p class="ref" style="margin-top:10px">Fuente: Énfasis del Área del Caribe 2026, página oficial del Área del Caribe (versión mayo 2025).</p></div>
 
     <div class="hero" style="margin-top:12px"><span class="eyebrow">Herramienta de la estaca</span><h2>Cómo apoya esta página el plan del Área</h2>
       <p>Esta página no es un documento oficial de La Iglesia de Jesucristo de los Santos de los Últimos Días. Es una herramienta local de apoyo para dar seguimiento ordenado a lo que pide el énfasis.</p></div>
     <div class="card"><div class="support">
-      <div><b>1. Personas por nombre</b><p>Cada líder anota a las personas de su organización, su siguiente ordenanza y su estado (En preparación → Lista → Completada). La pestaña Estaca muestra cuántas hay en cada etapa.</p></div>
-      <div><b>2. Padres apoyados</b><p>En el reporte semanal cada líder anota cuántos padres apoyó. La estaca ve el total por barrio.</p></div>
-      <div><b>3. Entrevistas y ordenanzas</b><p>El obispado y las presidencias anotan las entrevistas significativas; el obispado anota las ordenanzas efectuadas. La estaca ve los totales sin sumar a mano.</p></div>
+      <div><b>1. Personas por nombre</b><p>Cada líder anota a las personas de su organización, su siguiente ordenanza y su estado (En preparación → Lista → Completada). ${PILOTO?"En Estadísticas se ve":"La pestaña Estaca muestra"} cuántas hay en cada etapa.</p></div>
+      <div><b>2. Padres apoyados</b><p>En el reporte semanal cada líder anota cuántos padres apoyó. ${PILOTO?"El consejo ve el total del barrio.":"La estaca ve el total por barrio."}</p></div>
+      <div><b>3. Entrevistas y ordenanzas</b><p>El obispado y las presidencias anotan las entrevistas significativas; el obispado anota las ordenanzas efectuadas. ${PILOTO?"El consejo ve":"La estaca ve"} los totales sin sumar a mano.</p></div>
     </div></div>
     <div class="card"><h3>Qué llena cada líder</h3><p class="sub">Al entrar a ${PILOTO?esc(BNAME[PILOTO]):"Mi barrio"}, cada líder elige su llamamiento y ve solo su parte.</p>
-      <div class="tscroll"><table><thead><tr><th>Llamamiento</th><th style="text-align:left">Personas por nombre</th><th style="text-align:left">Reporte semanal</th></tr></thead>
+      <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table><thead><tr><th>Llamamiento</th><th style="text-align:left">Personas por nombre</th><th style="text-align:left">Reporte semanal</th></tr></thead>
       <tbody>${ROLES.filter(x=>x.id!=="todos").map(x=>`<tr><td><b>${esc(x.name)}</b></td><td style="text-align:left;white-space:normal">${esc(x.org==="Sacerdocio Aarónico (Hombres Jóvenes)"?"Hombres Jóvenes":x.org)}</td><td style="text-align:left;white-space:normal">${x.fields.length===WF.length?"Ordenanzas efectuadas, entrevistas y padres apoyados":esc(fieldLabels(x.fields).join(" y ").replace(/^./,c=>c.toUpperCase()))}</td></tr>`).join("")}
       <tr><td><b>Todos</b></td><td style="text-align:left;white-space:normal">Todas las organizaciones</td><td style="text-align:left;white-space:normal">Ve lo de todos y quién falta por anotar</td></tr></tbody></table></div></div>
     <div class="card"><h3>Cómo usar esta página</h3>
@@ -1041,7 +1061,7 @@ function viewStatsBarrio(){
   <div class="card">
     <h2>Por organización</h2>
     <p class="sub">Personas de cada organización y lo que su líder ha anotado en el año.</p>
-    <div class="tscroll"><table>
+    <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
       <thead><tr><th>Organización</th><th>Personas</th><th>En prep.</th><th>Listas</th><th>Compl.</th><th>Camino</th><th>Entrevistas</th><th>Padres</th></tr></thead>
       <tbody>${rows.map(r=>`<tr><td><b>${esc(r.name)}</b>${r.lid?`<span class="tdname">${esc(r.lid)}</span>`:""}</td><td class="num">${r.n}</td><td class="num">${r.prep}</td><td class="num">${r.listo}</td><td class="num">${r.comp}</td>
         <td class="num">${r.av===null?"·":`<span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-block;width:48px;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${r.av}%;background:var(--comp)"></span></span>${r.av}%</span>`}</td>
@@ -1054,7 +1074,7 @@ function viewStatsBarrio(){
     <div class="card">
       <h2>¿Para qué ordenanza se preparan?</h2>
       <p class="sub">En preparación o listas, por organización.</p>
-      <div class="tscroll"><table>
+      <div class="swipehint" aria-hidden="true">Desliza la tabla hacia los lados →</div><div class="tscroll"><table>
         <thead><tr><th>Siguiente ordenanza</th>${ORGS.map(g=>`<th style="text-align:center;white-space:normal;min-width:4.4rem">${esc(ORG_SHORT[g]||g)}</th>`).join("")}<th>Total</th></tr></thead>
         <tbody>${ORDS.map((o,i)=>`<tr><td>${esc(o)}</td>${M[i].map(v=>`<td class="heat num" ${heat(v)}>${v||"·"}</td>`).join("")}<td class="num"><b>${M[i].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}</tbody>
       </table></div>
@@ -1468,7 +1488,7 @@ let toastT; function toast(msg){ clearTimeout(toastT); let el=document.querySele
 function fail(e){
   const c = e && e.code;
   if (c==="invalid_argument"){ S.canWrite=false; render(); toast("No tienes permiso para anotar. Pide acceso de editor al secretario."); }
-  else if (c==="quota_exceeded") toast("Se llenó el espacio de datos. Avisa al secretario de estaca.");
+  else if (c==="quota_exceeded") toast("Se llenó el espacio de datos. Avisa al secretario"+(PILOTO?" del barrio.":" de estaca."));
   else toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
 }
 
@@ -1588,7 +1608,8 @@ setTab(S.tab,false);
 window.addEventListener("hashchange", ()=>{ fromHash(); setTab(S.tab,false); });
 
 function setConn(){
-  if (S.dbState==="ok") { $conn.textContent = S.canWrite===false ? "Solo lectura" : "En línea"; $conn.className = "conn " + (S.canWrite===false?"ro":"ok"); }
+  if (S.dbState==="ok" && !window.__remote) { $conn.textContent = "Solo este equipo"; $conn.className = "conn ro"; }
+  else if (S.dbState==="ok") { $conn.textContent = S.canWrite===false ? "Solo lectura" : "En vivo"; $conn.className = "conn " + (S.canWrite===false?"ro":"ok"); }
   else if (S.dbState==="none"){ $conn.textContent="Sin conexión a datos"; $conn.className="conn ro"; }
   else if (S.dbState==="error"){ $conn.textContent="Error"; $conn.className="conn ro"; }
 }

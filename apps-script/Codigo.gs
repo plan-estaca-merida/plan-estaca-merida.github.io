@@ -8,6 +8,8 @@
  * No edites ni borres filas a mano: hazlo desde la página.
  */
 
+var ARCHIVO = '1oRVPA8Huor9HN1l_z2rwun_F0oLoW1aTe1IP2SDLBIM'; // Énfasis 2026 · Barrio El Castor (datos)
+
 var HOJAS = { personas: 'Personas', semanas: 'Semanas', lideres: 'Lideres' };
 
 var BARRIOS = {
@@ -18,15 +20,17 @@ var ROLES = { obispado: 'Obispado', eq: 'Cuórum de Élderes', rs: 'Sociedad de 
 
 // Columnas legibles de cada hoja (después de "id" y antes de "Actualizado" y "datos").
 var COLUMNAS = {
-  personas: function (d) { return [barrio_(d.barrio), d.nombre || '', d.org || '', d.ord || '', d.estado || '']; },
+  personas: function (d) { return [barrio_(d.barrio), t_(d.nombre), t_(d.org), t_(d.ord), t_(d.estado)]; },
   semanas: function (d) {
-    return [barrio_(d.barrio), d.fecha || '', ROLES[d.rol] || (d.rol || 'Registro general'),
+    return [barrio_(d.barrio), t_(d.fecha), ROLES[d.rol] || t_(d.rol || 'Registro general'),
       n_(d.bc), n_(d.sa), n_(d.bp), n_(d.inv), n_(d.sel), n_(d.bpm), n_(d.ent), n_(d.pad)];
   },
-  lideres: function (d) { return [barrio_(d.barrio), d.nombre || '', d.org || '', d.llamamiento || '']; }
+  lideres: function (d) { return [barrio_(d.barrio), t_(d.nombre), t_(d.org), t_(d.llamamiento)]; }
 };
 
-function barrio_(s) { return BARRIOS[s] || s || ''; }
+function barrio_(s) { return BARRIOS[s] || t_(s); }
+// Evita que un texto que empieza con = + - @ se convierta en fórmula.
+function t_(v) { var s = String(v == null ? '' : v); return /^[=+\-@]/.test(s) ? "'" + s : s; }
 function n_(v) { return +v || 0; }
 
 /* ---------- lectura: la página pide todo ---------- */
@@ -84,7 +88,7 @@ function doPost(e) {
 
 /* ---------- ayudantes ---------- */
 function hoja_(col) {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(HOJAS[col]);
+  var sh = SpreadsheetApp.openById(ARCHIVO).getSheetByName(HOJAS[col]);
   if (!sh) throw new Error('Falta la pestaña ' + HOJAS[col]);
   return sh;
 }

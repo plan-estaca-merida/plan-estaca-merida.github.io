@@ -1,0 +1,10 @@
+{
+  "name": "Plan Estaca Mérida · Barrio El Castor",
+  "short_name": "El Castor",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f2f5f7",
+  "theme_color": "#013b63",
+  "lang": "es",
+  "icons": [{ "src": "og-square.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}
