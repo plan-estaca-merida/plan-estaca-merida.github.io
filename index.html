@@ -284,7 +284,11 @@ td.pend{color:var(--prep);font-size:.8rem;font-weight:700}
 .lk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lk code{display:block;font-size:.72rem;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
 div.pend{display:flex;flex-direction:column;margin:6px 0 12px}
-.pend-row{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:12px;align-items:start;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 2px;text-align:left;font-size:.9rem}
+.pend-item{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.pend-item .pend-row{flex:1;min-width:0}
+@media (max-width:520px){.pend-item .pend-row{grid-template-columns:1fr;gap:2px}}
+.pend-wa{flex:none;display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:700;background:#1f8f4e;color:#fff;text-decoration:none;white-space:nowrap}
+.pend-row{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:12px;align-items:start;border:0;background:transparent;padding:10px 2px;text-align:left;font-size:.9rem}
 .pend-row:hover{background:var(--surface-2)}
 .pdate{font-weight:700;font-size:.82rem;color:var(--muted)} .pdate.late{color:var(--danger)}
 .pres{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
@@ -1367,15 +1371,26 @@ function pendientesDe(ps){
   const by = (a,b)=>a.pl.fecha.localeCompare(b.pl.fecha);
   return {v:v.sort(by), pr:pr.sort(by)};
 }
+const DIAS_SEM = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function faltan(f){ const t=new Date(); t.setHours(0,0,0,0); return Math.round((parse(f)-t)/864e5); }
+function txtRecordatorio(items){
+  const un = items.length===1, b = items[0] && BNAME[items[0].p.barrio];
+  const lin = x => { const n=faltan(x.pl.fecha), d=parse(x.pl.fecha);
+    const cuando = n<0 ? `venció hace ${-n} ${-n===1?"día":"días"}` : n===0 ? "es HOY" : n===1 ? "es MAÑANA" : `faltan ${n} días`;
+    return `• *${x.p.nombre}* · ${x.o}${S.tab==="estaca"?" ("+BNAME[x.p.barrio]+")":""}\n  Fecha meta: ${DIAS_SEM[d.getDay()]} ${fmtFecha(x.pl.fecha)} (${cuando})\n  Plan: ${x.pl.texto}${x.pl.resp?"\n  Responsable: "+x.pl.resp:""}`; };
+  return `🔔 *Recordatorio · Énfasis 2026*${S.tab==="estaca"||!b?"":" · Barrio "+b}\n${un?(faltan(items[0].pl.fecha)<0?"Este plan de acción ya pasó su fecha meta:":"Se acerca la fecha meta de este plan de acción:"):"Fechas meta de los planes de acción:"}\n\n${items.map(lin).join("\n\n")}\n\nVer en la página: ${ART_URL}`;
+}
 function pendientesCard(ps, titulo){
   const act = ps.filter(p=>p.estado!=="Completada");
   const con = act.filter(p=>planDe(p,p.ord)).length;
   const {v, pr} = pendientesDe(ps);
-  const row = x => `<button class="pend-row" data-ficha="${esc(x.p.id)}"><span class="pdate ${vencido(x.p,x.o)?"late":""}">${esc(fmtFecha(x.pl.fecha))}</span><span style="min-width:0"><b>${esc(x.p.nombre)}</b> · ${esc(x.o)}${S.tab==="estaca"?` <span class="muted">· ${esc(BNAME[x.p.barrio])}</span>`:""}<span class="pres">${esc(x.pl.texto.length>90?x.pl.texto.slice(0,90)+"…":x.pl.texto)}${x.pl.resp?" · "+esc(x.pl.resp):""}</span></span></button>`;
+  const row = x => `<div class="pend-item"><button class="pend-row" data-ficha="${esc(x.p.id)}"><span class="pdate ${vencido(x.p,x.o)?"late":""}">${esc(fmtFecha(x.pl.fecha))}</span><span style="min-width:0"><b>${esc(x.p.nombre)}</b> · ${esc(x.o)}${S.tab==="estaca"?` <span class="muted">· ${esc(BNAME[x.p.barrio])}</span>`:""}<span class="pres">${esc(x.pl.texto.length>90?x.pl.texto.slice(0,90)+"…":x.pl.texto)}${x.pl.resp?" · "+esc(x.pl.resp):""}</span></span></button><a class="pend-wa" href="https://wa.me/?text=${encodeURIComponent(txtRecordatorio([x]))}" target="_blank" rel="noopener" aria-label="Enviar recordatorio por WhatsApp de ${esc(x.p.nombre)}">Recordar</a></div>`;
   return `<div class="card"><h2>${titulo||"Planes de acción"}</h2>
     <div class="legend" style="margin:6px 0 12px"><span><b class="num">${con}</b> de <b class="num">${act.length}</b> con plan para su siguiente ordenanza</span><span style="color:var(--danger)"><b class="num">${v.length}</b> vencidos</span><span><b class="num">${pr.length}</b> en los próximos 14 días</span></div>
     ${v.length||pr.length ? `${v.length?`<span class="eyebrow" style="color:var(--danger)">Vencidos</span><div class="pend">${v.slice(0,12).map(row).join("")}</div>`:""}
-      ${pr.length?`<span class="eyebrow">Próximos 14 días</span><div class="pend">${pr.slice(0,12).map(row).join("")}</div>`:""}`
+      ${pr.length?`<span class="eyebrow">Próximas metas · 14 días</span><div class="pend">${pr.slice(0,12).map(row).join("")}</div>`:""}
+      <div class="sharebar" style="margin-top:12px"><button class="btn wa" data-recordar="${esc(titulo||"")}">Enviar recordatorio por WhatsApp</button></div>
+      <p class="plmeta">Toca “Recordar” en una persona, o este botón para enviar todas las metas vencidas y de los próximos 14 días en un solo mensaje.</p>`
       : `<p class="plmeta">No hay planes vencidos ni próximos. Los planes con fecha meta aparecerán aquí.</p>`}
   </div>`;
 }
@@ -1483,6 +1498,11 @@ $app.addEventListener("click", async e=>{
   if (t.dataset.share){ const er = EROLES.find(x=>x.id===S.erol)||EROLES[0];
     const text = t.dataset.share==="barrio" ? txtBarrio(S.barrio) : txtEstaca(er);
     const ok = await copiar(text); openShare("Resumen para WhatsApp", text, ok); return; }
+  if (t.dataset.recordar!==undefined){ const er = EROLES.find(x=>x.id===S.erol)||EROLES[0];
+    const ps = S.tab==="estaca" ? S.personas.filter(p=>!er.org||p.org===er.org) : S.personas.filter(p=>p.barrio===S.barrio);
+    const {v, pr} = pendientesDe(ps); const items=[...v, ...pr];
+    if(!items.length){ toast("No hay metas vencidas ni próximas"); return; }
+    const text = txtRecordatorio(items); const ok = await copiar(text); openShare("Recordatorio de metas", text, ok); return; }
   if (t.dataset.act==="addlider"){ openLider(null, t.dataset.scope); return; }
   if (t.dataset.erol){ S.erol=t.dataset.erol; store.set("enf-erol",S.erol); S.pbarrio=""; render(); return; }
   if (t.dataset.esub){ S.esub=t.dataset.esub; render(); return; }
