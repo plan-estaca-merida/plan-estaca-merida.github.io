@@ -10,6 +10,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="og-square.png">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" as="image" type="image/webp" imagesrcset="img/capilla-640.webp 640w, img/capilla-1024.webp 1024w, img/capilla-1600.webp 1600w" imagesizes="(orientation:portrait) 100vh, (min-aspect-ratio:16/9) 100vw, 178vh" fetchpriority="high">
 <meta name="apple-mobile-web-app-title" content="El Castor">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -169,14 +170,31 @@ nav.tabs svg{width:20px;height:20px;flex:none}
   padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
   transition:opacity .6s ease, transform .6s ease}
 .cover.out{opacity:0;transform:scale(1.04);pointer-events:none}
-.cover::before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 50% 30%, var(--cover-glow), transparent 55%);animation:glow 6s ease-in-out infinite alternate}
-.cover .in{position:relative;display:flex;flex-direction:column;align-items:center;gap:clamp(14px,3vh,26px);text-align:center;max-height:100%}
-.cover .logo{height:min(58vh,520px);width:auto;max-width:78vw;overflow:visible}
+/* Foto de la capilla de fondo (la portada principal al entrar) */
+.cover{--cover-ink:#ffffff;background:#0b1f33;align-items:flex-end}
+.cover .photo{position:absolute;inset:0 0 auto 0;height:56%;margin:0;overflow:hidden}
+.cover .photo img{width:100%;height:100%;object-fit:cover;object-position:30% 55%;display:block;animation:kb 22s ease-out both}
+.cover::before{content:"";position:absolute;inset:0 0 auto 0;height:56.5%;z-index:1;pointer-events:none;
+  background:linear-gradient(to bottom, rgba(11,31,51,.25) 0%, rgba(11,31,51,0) 18%, rgba(11,31,51,0) 70%, #0b1f33 100%)}
+@media (orientation:landscape){.cover .photo,.cover::before{height:100%}
+  .cover::before{background:linear-gradient(to bottom, rgba(11,31,51,0) 0%, rgba(11,31,51,0) 35%, rgba(11,31,51,.8) 65%, rgba(11,31,51,.96) 100%)}}
+.cover .in{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2.2vh,20px);text-align:center;max-height:100%;width:100%;max-width:520px}
+.cover .logo{height:min(26vh,280px);width:auto;max-width:60vw;overflow:visible;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+.cover .ctag{color:#e8eff5!important;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.cover .enter{--cover-btn:#fee78a;--cover-btn-ink:#0b1f33}
+@media (min-width:900px) and (min-aspect-ratio:4/3){
+  .cover{align-items:center;justify-content:flex-end;padding-right:max(6vw,24px)}
+  .cover::before{background:linear-gradient(to right, rgba(1,30,52,0) 0%, rgba(1,30,52,0) 45%, rgba(1,30,52,.78) 68%, rgba(1,30,52,.94) 100%)}
+  .cover .photo img{object-position:center 45%}
+  .cover .in{max-width:420px}
+  .cover .logo{height:min(46vh,440px);max-width:30vw}
+}
+@keyframes kb{from{transform:scale(1.08)}to{transform:scale(1)}}
 .cover .logo .lg{transform:translate(var(--px,0px),var(--py,0px));transition:transform .4s ease-out}
 .cover .logo .sun{transform-origin:774px 420px;animation:sunIn 1.2s cubic-bezier(.2,.8,.2,1) both, sunPulse 5s 1.4s ease-in-out infinite}
 .cover .logo .m{animation:rise 1.1s cubic-bezier(.2,.8,.2,1) both}
 .cover .logo .m1{animation-delay:.35s}.cover .logo .m2{animation-delay:.5s}.cover .logo .m3{animation-delay:.65s}.cover .logo .m4{animation-delay:.8s}.cover .logo .m5{animation-delay:.95s}
-.cover .logo .txt{fill:var(--cover-ink);font-family:"Tinos","Times New Roman",Times,serif;animation:fadeUp .9s 1.3s ease both}
+.cover .logo .txt{fill:var(--cover-ink);paint-order:stroke;stroke:rgba(0,0,0,.25);stroke-width:6px;font-family:"Tinos","Times New Roman",Times,serif;animation:fadeUp .9s 1.3s ease both}
 .cover .ctag{color:var(--muted);font-size:.95rem;max-width:40ch;margin:0;line-height:1.5;animation:fadeUp .8s 1.6s ease both}
 .cover .enter{border:0;background:var(--cover-btn);color:var(--cover-btn-ink);font-weight:700;font-size:1.1rem;padding:14px 44px;border-radius:99px;
   box-shadow:0 8px 24px -10px var(--cover-btn);animation:fadeUp .8s 1.85s ease both;display:inline-flex;align-items:center;gap:10px}
@@ -1628,7 +1646,11 @@ document.getElementById("minilogo").innerHTML = logoSVG("mini-clip", false);
 /* ---------- portada ---------- */
 function showCover(){
   const el = document.createElement("div"); el.className="cover"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Portada");
-  el.innerHTML = `<div class="in">
+  el.innerHTML = `<picture class="photo" aria-hidden="true">
+      <source type="image/webp" srcset="img/capilla-640.webp 640w, img/capilla-1024.webp 1024w, img/capilla-1600.webp 1600w" sizes="(orientation:portrait) 100vh, (min-aspect-ratio:16/9) 100vw, 178vh">
+      <img src="img/capilla-1024.jpg" srcset="img/capilla-640.jpg 640w, img/capilla-1024.jpg 1024w, img/capilla-1600.jpg 1600w" sizes="(orientation:portrait) 100vh, (min-aspect-ratio:16/9) 100vw, 178vh" alt="" decoding="async" fetchpriority="high">
+    </picture>
+    <div class="in">
     ${logoSVG("cover-clip", true)}
     <p class="ctag">Énfasis del Área del Caribe 2026<br>Ministrar uno a uno a través de ordenanzas y convenios</p>
     <button class="enter" id="enterbtn" type="button">Entrar <span aria-hidden="true">→</span></button>
