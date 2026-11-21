@@ -21,6 +21,19 @@ var API = "https://script.google.com/macros/s/AKfycbxFnv1lVlDAR7WLKHS8_HQ58W9Dpv
 (function(){
   var REMOTE = !!API;
   var KEY = REMOTE ? "enf-cache-v1" : "enf-datos-v1", EMPTY = {"personas":{},"semanas":{},"lideres":{}}, data;
+  /* --- código de acceso del consejo de barrio ---
+     Llega en el enlace de WhatsApp (…/#acceso=XXXX-XXXX-XXXX) o se escribe en la portada.
+     Se guarda solo en este teléfono y se quita enseguida de la barra de direcciones. */
+  var AKEY = "enf-acceso", code = "";
+  try { code = localStorage.getItem(AKEY) || ""; } catch(e){}
+  (function(){ var h = location.hash || "", m = h.match(/(^#|[&#])acceso=([^&]*)/);
+    if (!m) return;
+    var c = decodeURIComponent(m[2]||"").trim();
+    if (c){ code = c; try{ localStorage.setItem(AKEY, c); }catch(e){} }
+    var resto = h.replace(m[0], m[1]==="#" ? "#" : "").replace(/^#&/, "#");
+    try { history.replaceState(null, "", location.pathname + location.search + (resto.length>1 ? resto : "")); } catch(e){ location.hash = resto; }
+  })();
+  if (REMOTE && !code){ try{ localStorage.removeItem(KEY); }catch(e){} }
   function load(){ try{ var t=localStorage.getItem(KEY); if(t){ var o=JSON.parse(t); if(o&&o.personas) return o; } }catch(e){} return JSON.parse(JSON.stringify(EMPTY)); }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
   data = load();
@@ -36,9 +49,20 @@ var API = "https://script.google.com/macros/s/AKfycbxFnv1lVlDAR7WLKHS8_HQ58W9Dpv
   /* --- con la hoja de Google --- */
   /* Para no cargar la hoja en cada consulta: primero se pregunta solo la "versión" (cambia con cada guardado).
      Si cambió, o pasó más de un minuto, se bajan todos los datos. */
-  var ver = null, lastFull = 0, busyGet = false;
+  var ver = null, lastFull = 0, busyGet = false, denied = false;
+  // Todas las consultas van por POST con el código (así el código no queda en direcciones ni historiales).
+  function post(body, k){ body.k = k == null ? code : k;
+    return fetch(API, {method:"POST", body:JSON.stringify(body), cache:"no-store"}).then(function(r){ return r.json(); }); }
+  // El código ya no sirve (lo cambiaron): se borra todo lo guardado en este teléfono y se vuelve a pedir.
+  function deny(){
+    code = ""; ver = null; denied = true;
+    try{ localStorage.removeItem(AKEY); localStorage.removeItem(KEY); }catch(e){}
+    data = JSON.parse(JSON.stringify(EMPTY)); emitAll(); conn("Sin acceso", false);
+    if (window.__pedirCodigo) window.__pedirCodigo("El código ya no es válido. Pide el nuevo al obispado.");
+  }
   function full(s0){
-    return fetch(API+"?a=all&_="+Date.now(), {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
+    return post({op:"all"}).then(function(j){
+      if (j && j.error === "codigo"){ deny(); return; }
       if (!j || !j.ok) throw new Error(j && j.error);
       lastFull = Date.now();
       if (pending || seq !== s0) return;            // alguien de este equipo guardó mientras tanto: se pide de nuevo luego
@@ -49,10 +73,11 @@ var API = "https://script.google.com/macros/s/AKfycbxFnv1lVlDAR7WLKHS8_HQ58W9Dpv
     });
   }
   function refresh(force){
-    if (!REMOTE || pending || busyGet) return Promise.resolve();
+    if (!REMOTE || !code || pending || busyGet) return Promise.resolve();
     var s0 = seq; busyGet = true;
     var p = (force || ver === null || Date.now()-lastFull > 60000) ? full(s0)
-      : fetch(API+"?a=v&_="+Date.now(), {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
+      : post({op:"v"}).then(function(j){
+          if (j && j.error === "codigo"){ deny(); return; }
           if (!j || !j.ok) throw new Error(j && j.error);
           lastErr = false; conn("En vivo", true);
           if (j.v !== ver) return full(s0);
@@ -61,9 +86,10 @@ var API = "https://script.google.com/macros/s/AKfycbxFnv1lVlDAR7WLKHS8_HQ58W9Dpv
   }
   function send(body){
     pending++; seq++; conn("Guardando…", true);
-    return fetch(API, {method:"POST", body:JSON.stringify(body)}).then(function(r){ return r.json(); })
-      .then(function(j){ pending--; if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : j && j.error==="lock" ? "busy" : "server"}; lastErr=false; conn(pending?"Guardando…":"En vivo", true); emit(body.col); setTimeout(function(){ refresh(true); }, 800); return j; })
-      .catch(function(e){ if (!(e && e.code)) pending--; conn("Sin conexión", false); setTimeout(function(){ refresh(true); }, 800); throw (e && e.code) ? e : {code:"network"}; });
+    if (!code){ pending--; conn("Sin acceso", false); return Promise.reject({code:"permission-denied"}); }
+    return post(body)
+      .then(function(j){ pending--; if (j && j.error === "codigo"){ deny(); throw {code:"permission-denied"}; } if (!j || !j.ok) throw {code: j && j.error==="not_found" ? "not_found" : j && j.error==="lock" ? "busy" : "server"}; lastErr=false; conn(pending?"Guardando…":"En vivo", true); emit(body.col); setTimeout(function(){ refresh(true); }, 800); return j; })
+      .catch(function(e){ if (!(e && e.code)) pending--; if (e && e.code === "permission-denied") throw e; conn("Sin conexión", false); setTimeout(function(){ refresh(true); }, 800); throw (e && e.code) ? e : {code:"network"}; });
   }
   function docRef(col,id){ return { id:id,
     set:function(b){ var v=JSON.parse(JSON.stringify(b)); data[col]=data[col]||{}; data[col][id]=v; save(); emit(col); return REMOTE ? send({op:"set", col:col, id:id, data:v}).then(function(){}) : Promise.resolve(); },
@@ -75,8 +101,20 @@ var API = "https://script.google.com/macros/s/AKfycbxFnv1lVlDAR7WLKHS8_HQ58W9Dpv
   var downloads = { save:function(o){ try{ var blob=new Blob([o.data],{type:"text/csv;charset=utf-8"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=o.filename; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500); return Promise.resolve({status:"saved"}); }catch(e){ return Promise.reject({code:"unavailable"}); } } };
   window.claude = { use:function(n){ return Promise.resolve(n==="db"?db:n==="user"?user:n==="downloads"?downloads:null); } };
   window.__remote = REMOTE;
+  // Para la portada: ¿ya hay código?, y probar uno escrito a mano.
+  window.__acceso = {
+    tiene: function(){ return !REMOTE || !!code; },
+    probar: function(c){
+      c = String(c||"").trim();
+      return post({op:"v"}, c).then(function(j){
+        if (!j || !j.ok) return j && j.error === "codigo" ? "mal" : "red";
+        code = c; denied = false; try{ localStorage.setItem(AKEY, c); }catch(e){}
+        refresh(true); return "ok";
+      }, function(){ return "red"; });
+    }
+  };
   if (REMOTE){
-    refresh(true);
+    if (code) refresh(true); else conn("Sin acceso", false);
     document.addEventListener("DOMContentLoaded", function(){ if (lastConn) conn(lastConn[0], lastConn[1]); });
     setInterval(function(){ if (document.visibilityState==="visible") refresh(); }, 8000);
     document.addEventListener("click", function(e){ if (e.target && e.target.closest && e.target.closest("#conn")) refresh(true); });
@@ -199,6 +237,16 @@ nav.tabs svg{width:20px;height:20px;flex:none}
 .cover .enter{border:0;background:var(--cover-btn);color:var(--cover-btn-ink);font-weight:700;font-size:1.1rem;padding:14px 44px;border-radius:99px;
   box-shadow:0 8px 24px -10px var(--cover-btn);animation:fadeUp .8s 1.85s ease both;display:inline-flex;align-items:center;gap:10px}
 .cover .enter:hover{transform:translateY(-1px)}
+.cover .enter:disabled{opacity:.75;cursor:wait}
+.cover .gate{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:340px;margin:0;animation:fadeUp .8s 1.85s ease both}
+.cover .gate label{color:#e8eff5;font-weight:600;font-size:.95rem;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.cover .gate input{box-sizing:border-box;width:100%;font:600 1.1rem/1.2 var(--f-body);letter-spacing:.08em;text-align:center;text-transform:uppercase;
+  padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff}
+.cover .gate input::placeholder{color:rgba(255,255,255,.5)}
+.cover .gate input:focus{outline:2px solid #fee78a;outline-offset:2px}
+.cover .gmsg{margin:0;min-height:1.4em;color:#c9d6e1;font-size:.88rem;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+.cover .gmsg.bad{color:#ffd1cc}
+.cover .gate .enter{animation:none}
 .cover .enter span{transition:transform .2s}.cover .enter:hover span{transform:translateX(4px)}
 @keyframes rise{from{transform:translateY(420px)}to{transform:translateY(0)}}
 @keyframes sunIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
@@ -1569,6 +1617,7 @@ function fail(e){
   else if (c==="quota_exceeded") toast("Se llenó el espacio de datos. Avisa al secretario"+(PILOTO?" del barrio.":" de estaca."));
   else if (c==="busy") toast("Varios líderes están guardando a la vez. Espera unos segundos e inténtalo otra vez.");
   else if (c==="not_found") toast("Este registro ya no existe: otro líder lo eliminó.");
+  else if (c==="permission-denied") toast("No se guardó: falta el código de acceso del consejo de barrio.");
   else toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
 }
 
@@ -1644,7 +1693,8 @@ function logoSVG(id, withText){
 document.getElementById("minilogo").innerHTML = logoSVG("mini-clip", false);
 
 /* ---------- portada ---------- */
-function showCover(){
+function showCover(msg){
+  const needCode = !(window.__acceso ? window.__acceso.tiene() : true);
   const el = document.createElement("div"); el.className="cover"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Portada");
   el.innerHTML = `<picture class="photo" aria-hidden="true">
       <source type="image/webp" srcset="img/capilla-640.webp 640w, img/capilla-1024.webp 1024w, img/capilla-1600.webp 1600w" sizes="(orientation:portrait) 100vh, (min-aspect-ratio:16/9) 100vw, 178vh">
@@ -1653,7 +1703,12 @@ function showCover(){
     <div class="in">
     ${logoSVG("cover-clip", true)}
     <p class="ctag">Énfasis del Área del Caribe 2026<br>Ministrar uno a uno a través de ordenanzas y convenios</p>
-    <button class="enter" id="enterbtn" type="button">Entrar <span aria-hidden="true">→</span></button>
+    <form class="gate" id="gate" novalidate>
+      ${needCode ? `<label for="codigo">Código de acceso del consejo de barrio</label>
+      <input id="codigo" name="codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" placeholder="XXXX-XXXX-XXXX" maxlength="40">
+      <p class="gmsg" id="gmsg" role="alert">${msg ? esc(msg) : "¿No lo tienes? Pídelo al obispado."}</p>` : ""}
+      <button class="enter" id="enterbtn" type="submit">Entrar <span aria-hidden="true">→</span></button>
+    </form>
   </div>`;
   document.body.appendChild(el);
   document.body.style.overflow="hidden";
@@ -1673,15 +1728,31 @@ function showCover(){
     setTimeout(()=>requestAnimationFrame(drift), 1800);
     el._stop = () => { alive=false; };
   }
-  const btn = el.querySelector("#enterbtn");
-  setTimeout(()=>{ try{ btn.focus({preventScroll:true}); }catch(e){} }, 1900);
-  btn.addEventListener("click", ()=>{
+  const btn = el.querySelector("#enterbtn"), inp = el.querySelector("#codigo"), gmsg = el.querySelector("#gmsg");
+  if (!inp) setTimeout(()=>{ try{ btn.focus({preventScroll:true}); }catch(e){} }, 1900);
+  const enter = () => {
     applyMode(currentMode()); render();
     el.classList.add("out"); el._stop && el._stop();
     document.body.style.overflow="";
     setTimeout(()=>el.remove(), 650);
+  };
+  el.querySelector("#gate").addEventListener("submit", ev=>{
+    ev.preventDefault();
+    if (!inp || window.__acceso.tiene()) return enter();
+    const c = inp.value.trim();
+    if (!c){ gmsg.textContent = "Escribe el código que te dio el obispado."; gmsg.className = "gmsg bad"; inp.focus(); return; }
+    btn.disabled = true; btn.firstChild.textContent = "Verificando… ";
+    window.__acceso.probar(c).then(r=>{
+      btn.disabled = false; btn.firstChild.textContent = "Entrar ";
+      if (r==="ok") return enter();
+      gmsg.className = "gmsg bad";
+      gmsg.textContent = r==="mal" ? "Ese código no es correcto. Revísalo o pídelo al obispado." : "No hay conexión. Revisa el internet e inténtalo otra vez.";
+      inp.select();
+    });
   });
 }
+// Si el código cambió mientras la página estaba abierta, se vuelve a la portada para pedirlo.
+window.__pedirCodigo = msg => { if (!document.querySelector(".cover")) showCover(msg); };
 showCover();
 
 S.barrio = PILOTO || (BNAME[store.get("enf-barrio")] ? store.get("enf-barrio") : null);

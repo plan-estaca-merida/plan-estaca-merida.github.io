@@ -7,7 +7,14 @@
  *
  * No edites ni borres filas a mano: hazlo desde la página.
  *
- * Cómo publicarla (una sola vez): Implementar → Nueva implementación → Aplicación web,
+ * CÓDIGO DE ACCESO (solo el consejo de barrio):
+ *   Sin el código no se ve ni se guarda nada. El código NO está en este archivo ni en GitHub:
+ *   se guarda en Configuración del proyecto → Propiedades del script → CODIGO.
+ *   Para crear o cambiar el código: elige la función "nuevoCodigo" arriba y pulsa Ejecutar.
+ *   En "Registro de ejecución" aparece el código nuevo y el enlace para mandar por WhatsApp.
+ *   El código anterior deja de servir al instante (no hace falta volver a implementar).
+ *
+ * Cómo publicarla: Implementar → Nueva implementación → Aplicación web,
  * "Ejecutar como: Yo" y "Quién tiene acceso: Cualquier persona". Copia la URL que termina en /exec.
  * Si cambias este código: Implementar → Gestionar implementaciones → editar → Versión: Nueva.
  */
@@ -40,28 +47,54 @@ function barrio_(s) { return BARRIOS[s] || t_(s); }
 function t_(v) { var s = String(v == null ? '' : v); return /^[=+\-@]/.test(s) ? "'" + s : s; }
 function n_(v) { return +v || 0; }
 
-/* ---------- lectura ---------- */
-// ?a=v  → solo la versión (muy rápido; la página pregunta cada pocos segundos)
-// ?a=all → todos los datos
-function doGet(e) {
-  try {
-    var a = (e && e.parameter && e.parameter.a) || 'all';
-    if (a === 'v') return json_({ ok: true, v: version_() });
-    var out = {};
-    Object.keys(HOJAS).forEach(function (col) { out[col] = leer_(col); });
-    return json_({ ok: true, data: out, v: version_(), t: new Date().toISOString() });
-  } catch (err) {
-    return json_({ ok: false, error: String(err) });
-  }
+/* ---------- acceso ---------- */
+var PAGINA = 'https://plan-estaca-merida.github.io/';
+
+// Ejecuta esta función desde el editor para crear (o cambiar) el código del consejo de barrio.
+function nuevoCodigo() {
+  var letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0, O, 1 ni I para no confundirlas
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid() + Date.now() + Math.random());
+  var c = '';
+  for (var i = 0; i < 12; i++) c += letras.charAt((bytes[i] + 256) % 32);
+  c = c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8);
+  PropertiesService.getScriptProperties().setProperty('CODIGO', c);
+  Logger.log('Código nuevo del consejo de barrio: ' + c);
+  Logger.log('Enlace para mandar por WhatsApp (en privado): ' + PAGINA + '#acceso=' + c);
+  return c;
 }
 
-/* ---------- escritura: set, update o delete de un registro ---------- */
+function limpio_(s) { return String(s == null ? '' : s).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function hash_(s) { return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'enfasis2026:' + s)); }
+function acceso_(k) {
+  var c = limpio_(PropertiesService.getScriptProperties().getProperty('CODIGO'));
+  var k2 = limpio_(k);
+  if (c.length < 8 || !k2) return false;
+  return hash_(k2) === hash_(c);
+}
+
+/* ---------- lectura directa (desactivada) ---------- */
+// Abrir la URL en el navegador ya no muestra datos: todo pasa por doPost con el código.
+function doGet() {
+  return json_({ ok: false, error: 'codigo' });
+}
+
+/* ---------- lectura y escritura (siempre con el código) ----------
+   { k: código, op: 'v' }    → solo la versión (muy rápido; la página pregunta cada pocos segundos)
+   { k: código, op: 'all' }  → todos los datos de El Castor
+   { k: código, op: 'set' | 'update' | 'delete', col, id, data } → guardar un registro */
 function doPost(e) {
   var lock = LockService.getScriptLock();
   var tengo = false;
   try {
     if (!e || !e.postData || e.postData.contents.length > 50000) return json_({ ok: false, error: 'registro demasiado grande' });
     var req = JSON.parse(e.postData.contents);
+    if (!req || !acceso_(req.k)) return json_({ ok: false, error: 'codigo' });
+    if (req.op === 'v') return json_({ ok: true, v: version_() });
+    if (req.op === 'all') {
+      var out = {};
+      Object.keys(HOJAS).forEach(function (c) { out[c] = leer_(c); });
+      return json_({ ok: true, data: out, v: version_(), t: new Date().toISOString() });
+    }
     var col = req.col, id = String(req.id || ''), op = req.op;
     if (!Object.prototype.hasOwnProperty.call(HOJAS, col)) return json_({ ok: false, error: 'colección desconocida' });
     if (!/^[A-Za-z0-9_-]{1,120}$/.test(id)) return json_({ ok: false, error: 'id inválido' });
@@ -127,7 +160,10 @@ function leer_(col) {
   for (var i = 0; i < ids.length; i++) {
     var id = String(ids[i][0] || '');
     if (!id || !js[i][0]) continue;
-    try { res[id] = JSON.parse(js[i][0]); } catch (x) {}
+    try {
+      var d = JSON.parse(js[i][0]);
+      if (d && PERMITIDOS.indexOf(d.barrio) >= 0) res[id] = d; // solo El Castor
+    } catch (x) {}
   }
   return res;
 }
